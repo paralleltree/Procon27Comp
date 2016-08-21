@@ -49,6 +49,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Components\Frame.cs" />
+    <Compile Include="Components\Piece.cs" />
+    <Compile Include="Components\Puzzle.cs" />
     <Compile Include="Components\PuzzleComponent.cs" />
     <Compile Include="Components\Vertex.cs" />
     <Compile Include="Internal\CoreExtensions.cs" />
