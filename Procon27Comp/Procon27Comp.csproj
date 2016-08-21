@@ -49,6 +49,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Components\PuzzleComponent.cs" />
+    <Compile Include="Components\Vertex.cs" />
     <Compile Include="Internal\CoreExtensions.cs" />
     <Compile Include="Internal\VectorHelper.cs" />
     <Compile Include="Program.cs" />
