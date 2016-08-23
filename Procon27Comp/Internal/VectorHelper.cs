@@ -34,5 +34,37 @@ namespace Procon27Comp.Internal
             var composite = Vector2.Add(prev, next);
             return Vector3.Cross(new Vector3(composite, 0), new Vector3(prev, 0)).Z < 0;
         }
+
+        /// <summary>
+        /// 原点を中心にベクトルに回転変換を適用します。
+        /// </summary>
+        /// <param name="v">変換を適用するベクトル</param>
+        /// <param name="rad">回転角</param>
+        /// <returns>回転変換が適用されたベクトル</returns>
+        public static Vector2 Rotate(this Vector2 v, float rad)
+        {
+            return Vector2.Transform(v, Matrix3x2.CreateRotation(rad));
+        }
+
+        /// <summary>
+        /// ベクトルのリストを平行移動します。
+        /// </summary>
+        /// <param name="offsetX">X軸方向の移動距離</param>
+        /// <param name="offsetY">Y軸方向の移動距離</param>
+        /// <returns>平行移動を適用したベクトル</returns>
+        public static IEnumerable<Vector2> Offset(this IEnumerable<Vector2> list, float offsetX, float offsetY)
+        {
+            return list.Select(p => new Vector2(p.X + offsetX, p.Y + offsetY));
+        }
+
+        /// <summary>
+        /// ベクトルのリストに回転変換を適用します。
+        /// </summary>
+        /// <param name="rad">回転角</param>
+        /// <returns>回転変換を適用したベクトル</returns>
+        public static IEnumerable<Vector2> Rotate(this IEnumerable<Vector2> list, float rad)
+        {
+            return list.Select(p => p.Rotate(rad));
+        }
     }
 }
