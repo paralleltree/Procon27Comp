@@ -58,6 +58,7 @@
     <Compile Include="Components\Piece.cs" />
     <Compile Include="Components\Puzzle.cs" />
     <Compile Include="Components\PuzzleComponent.cs" />
+    <Compile Include="Components\PuzzleReader.cs" />
     <Compile Include="Components\Vertex.cs" />
     <Compile Include="Internal\CoreExtensions.cs" />
     <Compile Include="Internal\GraphicsHelper.cs" />
