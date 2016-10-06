@@ -62,6 +62,7 @@
     <Compile Include="Components\Vertex.cs" />
     <Compile Include="Internal\CoreExtensions.cs" />
     <Compile Include="Internal\GraphicsHelper.cs" />
+    <Compile Include="Internal\PolygonHelper.cs" />
     <Compile Include="Internal\VectorHelper.cs" />
     <Compile Include="Libraries\GpcWrapper.cs" />
     <Compile Include="Program.cs" />
