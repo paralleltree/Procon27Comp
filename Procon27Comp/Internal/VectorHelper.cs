@@ -20,7 +20,8 @@ namespace Procon27Comp.Internal
         /// <remarks>いずれかのベクトルの絶対値が0のとき、NaN。</remarks>
         public static double CalcAngle(Vector2 a, Vector2 b)
         {
-            return Math.Acos((Vector2.Dot(a, b) / (a.Length() * b.Length())));
+            float f = Vector2.Dot(a, b) / (a.Length() * b.Length());
+            return Math.Acos(f > 1 || f < -1 ? Math.Round(f) : f); // 1を超える場合がある
         }
 
         /// <summary>

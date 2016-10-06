@@ -22,6 +22,23 @@ namespace Procon27Comp.Components
         public double Angle { get; }
 
         /// <summary>
+        /// 頂点のX座標を取得します。
+        /// </summary>
+        public float X
+        {
+            get { return Location.X; }
+        }
+
+        /// <summary>
+        /// 頂点のY座標を取得します。
+        /// </summary>
+        public float Y
+        {
+            get { return Location.Y; }
+        }
+
+
+        /// <summary>
         /// 頂点の座標と内角から、<see cref="Vertex"/>クラスの新しいインスタンスを初期化します。
         /// </summary>
         /// <param name="loc">頂点の座標</param>

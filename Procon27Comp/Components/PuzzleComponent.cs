@@ -24,18 +24,32 @@ namespace Procon27Comp.Components
         public PuzzleComponent(IEnumerable<Vector2> points)
         {
             var list = new LinkedList<Vector2>(points);
-            foreach (var v in list.GetNodes())
-            {
-                var current = v.Value;
-                var prev = v.GetPreviousValue();
-                var next = v.GetNextValue();
 
-                var pv = Vector2.Subtract(current, prev);
-                var nv = Vector2.Subtract(next, current);
-                double angle = VectorHelper.CalcAngle(-pv, nv);
-                if (VectorHelper.IsConcaveVertex(pv, nv)) angle = 2 * Math.PI - angle;
-                Vertexes.AddLast(new Vertex(current, angle));
+            // 時計回りか反時計回りか判定
+            // http://www5d.biglobe.ne.jp/~noocyte/Programming/Geometry/PolygonMoment-jp.html#AreaAndDirection
+            float s = 0;
+            foreach (var node in list.GetNodes())
+            {
+                Vector2 current = node.Value;
+                Vector2 next = node.GetNextValue();
+                s += (current.X + next.X) * (next.Y - current.Y);
             }
+            bool isclockwise = s > 0; // ディスプレイの座標系(X軸: 右方向, Y軸: 下方向)なので一般の場合と符号が逆
+
+            foreach (var v in isclockwise ? new LinkedList<Vector2>(list.Reverse()).GetNodes() : list.GetNodes())
+            {
+                double angle = GetAngle(v.GetPreviousValue(), v.Value, v.GetNextValue());
+                Vertexes.AddLast(new Vertex(v.Value, angle));
+            }
+        }
+
+        //反時計回り前提で角度計算
+        protected double GetAngle(Vector2 prev, Vector2 middle, Vector2 next)
+        {
+            var pv = Vector2.Subtract(middle, prev);
+            var nv = Vector2.Subtract(next, middle);
+            double angle = VectorHelper.CalcAngle(-pv, nv);
+            return VectorHelper.IsConcaveVertex(pv, nv) ? 2 * Math.PI - angle : angle;
         }
     }
 }
