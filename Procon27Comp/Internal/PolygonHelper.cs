@@ -26,5 +26,10 @@ namespace Procon27Comp.Internal
                 gp.AddContour(new GpcWrapper.VertexList(ring.Select(p => new PointF((float)p.X, (float)p.Y)).ToArray()), false);
             return gp;
         }
+
+        public static Vertesaur.Ring2 Transform(this Vertesaur.Ring2 r, double dx, double dy)
+        {
+            return new Vertesaur.Ring2(r.Select(p => new Vertesaur.Point2(p.X + dx, p.Y + dy)));
+        }
     }
 }
