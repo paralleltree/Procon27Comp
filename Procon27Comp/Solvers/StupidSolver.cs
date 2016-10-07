@@ -38,7 +38,7 @@ namespace Procon27Comp.Solvers
 
             // 一番小さいわくから埋める
             var forder = Puzzle.Frames;
-            foreach (var f in forder.OrderBy(p => p.GetPolygon().GetArea()))
+            foreach (var f in forder.OrderBy(p => Math.Abs(p.GetPolygon().GetArea())))
             {
                 var first = new State(initf)
                 {
@@ -126,7 +126,7 @@ namespace Procon27Comp.Solvers
                             }
 
                             // merged内に複数あったら面積小さすぎるものを抜く
-                            var validframe = merged.Where(p => p.GetArea() > 4.0).ToList();
+                            var validframe = merged.Where(p => Math.Abs(p.GetArea()) > 4.0).ToList();
 
                             var nextstate = new State(current.UnusedFlags & ((1UL << pi) ^ ulong.MaxValue)) // 未使用フラグを折る
                             {
@@ -135,14 +135,14 @@ namespace Procon27Comp.Solvers
                             };
 
                             // 全埋めか残り面積が一定以下になったら返す
-                            if (validframe.Count == 0 || merged.GetArea() < 1.6) // 1.6??
+                            if (validframe.Count == 0 || Math.Abs(merged.GetArea()) < 1.6)
                             {
                                 return nextstate;
                             }
 
                             // 残った枠ごとに面積順に呼び出し
                             bool succeed = true;
-                            foreach (var remaining in validframe.OrderBy(p => p.GetArea()))
+                            foreach (var remaining in validframe.OrderBy(p => Math.Abs(p.GetArea())))
                             {
                                 // 隣り合う近すぎる頂点を除いてわく作成
                                 var validvertex = new LinkedList<Point2>(remaining).GetNodes().Select(p => new
@@ -153,15 +153,14 @@ namespace Procon27Comp.Solvers
                                 .Where(p => p.Distance > 2 * 2)
                                 .Select(p => p.Point.Value);
                                 var nextframe = new Frame(validvertex.Select(p => new Numerics.Vector2((float)p.X, (float)p.Y)));
-                                // Nanとか無効な角を除く
 
+                                // Nanとか無効な角を除く
                                 while (true)
                                 {
                                     var correct = nextframe.Vertexes.Where(p => !double.IsNaN(p.Angle) && p.Angle > 0.06).ToList();
                                     if (correct.Count == nextframe.Vertexes.Count) break;
                                     nextframe = new Frame(correct.Select(p => p.Location));
                                 }
-
 
                                 using (var canvas = new Bitmap(picSize.Width, picSize.Height))
                                 {
