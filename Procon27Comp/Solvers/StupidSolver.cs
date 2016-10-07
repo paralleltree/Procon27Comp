@@ -46,9 +46,11 @@ namespace Procon27Comp.Solvers
                 };
                 State res = Update(first);
                 if (res == null) return; // 失敗
+                Console.WriteLine("Found");
                 ansdic.Add(f, res);
                 initf = res.UnusedFlags; // 未使用ピースを更新
             }
+            Console.WriteLine("Done");
 
             // 埋まった
             Solutions.Add(new Solution(Puzzle, ansdic));
@@ -84,7 +86,8 @@ namespace Procon27Comp.Solvers
                     {
                         vertexcounter++;
                         Vertex pv = pn.Value;
-                        if (pv.Angle > fv.Angle) continue; // そもそもピースが入らない角度なら飛ばす
+                        // とりあえず+2度まで許容
+                        if (pv.Angle - fv.Angle > 2 * Math.PI / 180) continue; // そもそもピースが入らない角度なら飛ばす
                         if (fv.Angle < 10 * Math.PI / 180) continue; // 折れるほど細ければ飛ばす
 
                         // 候補を判定
@@ -109,8 +112,28 @@ namespace Procon27Comp.Solvers
 
                             // わくからはみ出た面積が大きければ飛ばす
                             double ia = Math.Abs(intersect.GetArea());
-                            if (Math.Abs(ia - Math.Abs(ppoly.GetArea())) > 1.2) continue;
 
+                            // bouding-boxではみ出しから最長の辺を縦にして縦横比を見る。極端に小さければ飛ばす
+                            var boxrates = ((Polygon2)PolygonCalculation.Difference(ppoly, intersect))
+                                .Select(p =>
+                                {
+                                    var lintersect = new LinkedList<Numerics.Vector2>(p.Select(q => new Numerics.Vector2((float)q.X, (float)q.Y)));
+                                    var longvec = lintersect.GetNodes().Select(q => q.GetNextValue() - q.Value)
+                                          .OrderByDescending(q => q.LengthSquared())
+                                          .First();
+                                    float angle = (float)VectorHelper.CalcAngle(longvec, Numerics.Vector2.UnitY);
+                                    bool isonleft = Numerics.Vector3.Cross(new Numerics.Vector3(Numerics.Vector2.UnitY, 0), new Numerics.Vector3(longvec, 0)).Z > 0;
+                                    var transformed = lintersect.Rotate(isonleft ? -angle : angle).ToList();
+                                    var tpoly = new Polygon2(transformed.Select(q => new Point2(q.X, q.Y)));
+                                    var box = tpoly.GetMbr();
+                                    return box.Width / box.Height;
+                                });
+
+                            if (Math.Abs(ia - Math.Abs(ppoly.GetArea())) > 10.0  /* && */)
+                            {
+                                // 0-1の比の間で判定
+                                if (boxrates.Any(p => p > 0.08)) continue;
+                            }
                             // 更新
                             var merged = (Polygon2)PolygonCalculation.Difference(fpolygon, ppoly);
 
