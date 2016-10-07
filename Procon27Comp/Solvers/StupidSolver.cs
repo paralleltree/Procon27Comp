@@ -43,8 +43,7 @@ namespace Procon27Comp.Solvers
                 var first = new State(initf)
                 {
                     CurrentFrame = f,
-                    History = new LinkedList<State>(),
-                    Piece = null
+                    History = new LinkedList<State>()
                 };
                 State res = Update(first);
                 if (res == null) return; // 失敗
@@ -146,32 +145,55 @@ namespace Procon27Comp.Solvers
                                 return nextstate;
                             }
 
-                            // TODO: わくが分かれたときを考えろ
-                            var nextframe = new Frame(validframe.Single().Select(p => new Numerics.Vector2((float)p.X, (float)p.Y)));
-
-                            // Nanとか無効な角を除く
-                            while (true)
+                            // 残った枠ごとに面積順に呼び出し
+                            bool succeed = true;
+                            foreach (var remaining in validframe.OrderBy(p => p.GetArea()))
                             {
-                                var correct = nextframe.Vertexes.Where(p => !double.IsNaN(p.Angle) && p.Angle > 0.06).ToList();
-                                if (correct.Count == nextframe.Vertexes.Count) break;
-                                nextframe = new Frame(correct.Select(p => p.Location));
-                            }
-
-                            using (var canvas = new Bitmap(picSize.Width, picSize.Height))
-                            {
-                                canvas.WorkWithGraphic(g =>
+                                // 隣り合う近すぎる頂点を除いてわく作成
+                                var validvertex = new LinkedList<Point2>(remaining).GetNodes().Select(p => new
                                 {
-                                    foreach (var f in Puzzle.Frames) f.GetPolygon().DrawToImage(g, new Pen(Color.Aquamarine));
-                                    fpolygon.DrawToImage(g, new Pen(Color.Green));
-                                    nextframe.GetPolygon().DrawToImage(g, new Pen(Color.DarkOrange));
-                                });
-                                canvas.SaveAsPng(@"C:\Users\paltee\Desktop\merged_corrected.png");
+                                    Point = p,
+                                    Distance = (p.GetNextValue() - p.Value).GetMagnitudeSquared()
+                                })
+                                .Where(p => p.Distance > 2 * 2)
+                                .Select(p => p.Point.Value);
+                                var nextframe = new Frame(validvertex.Select(p => new Numerics.Vector2((float)p.X, (float)p.Y)));
+                                // Nanとか無効な角を除く
+
+                                while (true)
+                                {
+                                    var correct = nextframe.Vertexes.Where(p => !double.IsNaN(p.Angle) && p.Angle > 0.06).ToList();
+                                    if (correct.Count == nextframe.Vertexes.Count) break;
+                                    nextframe = new Frame(correct.Select(p => p.Location));
+                                }
+
+
+                                using (var canvas = new Bitmap(picSize.Width, picSize.Height))
+                                {
+                                    canvas.WorkWithGraphic(g =>
+                                    {
+                                        foreach (var f in Puzzle.Frames) f.GetPolygon().DrawToImage(g, new Pen(Color.Aquamarine));
+                                        fpolygon.DrawToImage(g, new Pen(Color.Green));
+                                        nextframe.GetPolygon().DrawToImage(g, new Pen(Color.DarkOrange));
+                                    });
+                                    canvas.SaveAsPng(@"C:\Users\paltee\Desktop\merged_corrected.png");
+                                }
+
+                                nextstate.CurrentFrame = nextframe;
+                                nextstate.Piece = ppoly;
+
+                                var res = Update(nextstate);
+                                if (res != null)
+                                {
+                                    nextstate = res; // 埋めたわくの情報で上書き
+                                }
+                                else
+                                {
+                                    succeed = false;
+                                    break; // 1つでも埋められないわくがあれば次の候補へ
+                                }
                             }
-
-                            nextstate.CurrentFrame = nextframe;
-
-                            var res = Update(nextstate);
-                            if (res != null) return res;
+                            if (succeed) return nextstate;
                         }
                     }
                 }
