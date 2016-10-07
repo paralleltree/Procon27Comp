@@ -44,9 +44,10 @@ namespace Procon27Comp.Solvers
                 var first = new State(initf)
                 {
                     CurrentFrame = f,
-                    History = new LinkedList<Polygon2>()
+                    History = new LinkedList<State>(),
+                    Piece = null
                 };
-                State res = Update(new LinkedList<State>(), first);
+                State res = Update(first);
                 if (res == null) return; // 失敗
                 ansdic.Add(f, res);
                 initf = res.UnusedFlags; // 未使用ピースを更新
@@ -62,10 +63,9 @@ namespace Procon27Comp.Solvers
         /// <summary>
         /// 1つの枠について探索を進める
         /// </summary>
-        /// <param name="hist">これまでの履歴</param>
         /// <param name="current">現在の状態</param>
         /// <returns>見つかった解</returns>
-        public State Update(LinkedList<State> hist, State current)
+        public State Update(State current)
         {
             // TODO: 埋めきったかチェックして返す
             Polygon2 fpolygon = current.CurrentFrame.GetPolygon();
@@ -131,13 +131,14 @@ namespace Procon27Comp.Solvers
                             // merged内に複数あったら面積小さすぎるものを抜く
                             var validframe = merged.Where(p => p.GetArea() > 4.0).ToList();
 
-                            var nexthist = new LinkedList<State>(hist);
+                            var nexthist = new LinkedList<State>(current.History);
+                            nexthist.AddLast(current);
+
                             var nextstate = new State(current.UnusedFlags & ((1UL << pi) ^ ulong.MaxValue)) // 未使用フラグを折る
                             {
-                                History = new LinkedList<Polygon2>(current.History)
+                                History = nexthist,
+                                Piece = ppoly
                             };
-                            nexthist.AddLast(current);
-                            nextstate.History.AddLast(ppoly);
 
                             // 全埋めか残り面積が一定以下になったら返す
                             if (validframe.Count == 0 || merged.GetArea() < 1.6) // 1.6??
@@ -170,7 +171,7 @@ namespace Procon27Comp.Solvers
 
                             nextstate.CurrentFrame = nextframe;
 
-                            var res = Update(nexthist, nextstate);
+                            var res = Update(nextstate);
                             if (res != null) return res;
                         }
                     }

@@ -41,9 +41,10 @@ namespace Procon27Comp
                     // ピース描画
                     foreach (var sol in Results)
                     {
-                        foreach (var piece in sol.Value.History)
+                        foreach (var hist in sol.Value.History)
                         {
-                            piece.DrawToImage(g, new Pen(Color.DarkRed));
+                            if (hist.Piece == null) continue;
+                            hist.Piece.DrawToImage(g, new Pen(Color.DarkRed));
                         }
                     }
 

@@ -11,8 +11,16 @@ namespace Procon27Comp.Components
         // Polygon2はRing2のリストオブジェクト(i.e. Polygon2 = List<Ring2>)
         public Frame CurrentFrame { get; set; }
 
-        // 移動済みピースのリスト
-        public LinkedList<Polygon2> History { get; set; }
+        /// <summary>
+        /// 移動したピース
+        /// </summary>
+        public Polygon2 Piece { get; set; }
+
+        /// <summary>
+        /// 1つ前までの履歴
+        /// </summary>
+        public LinkedList<State> History { get; set; }
+
         public ulong UnusedFlags { get; set; } // 使われてなかったらビットを立てる
 
         public State(ulong uflags)
