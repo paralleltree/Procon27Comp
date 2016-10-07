@@ -36,10 +36,9 @@ namespace Procon27Comp.Solvers
             // 初期状態
             ulong initf = State.InitFlags(Puzzle.Pieces.Count);
 
-            // とりあえず最初のわくから埋める
-            // TODO: 一番小さいわく
+            // 一番小さいわくから埋める
             var forder = Puzzle.Frames;
-            foreach (var f in forder)
+            foreach (var f in forder.OrderBy(p => p.GetPolygon().GetArea()))
             {
                 var first = new State(initf)
                 {
