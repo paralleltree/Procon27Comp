@@ -17,9 +17,9 @@ namespace Procon27Comp.Components
         public Polygon2 Piece { get; set; }
 
         /// <summary>
-        /// 1つ前までの履歴
+        /// 親の状態
         /// </summary>
-        public LinkedList<State> History { get; set; }
+        public State Parent { get; set; }
 
         public ulong UnusedFlags { get; set; } // 使われてなかったらビットを立てる
 

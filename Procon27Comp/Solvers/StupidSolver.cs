@@ -42,8 +42,7 @@ namespace Procon27Comp.Solvers
             {
                 var first = new State(initf)
                 {
-                    CurrentFrame = f,
-                    History = new LinkedList<State>()
+                    CurrentFrame = f
                 };
                 State res = Update(first);
                 if (res == null) return; // 失敗
@@ -129,19 +128,15 @@ namespace Procon27Comp.Solvers
                             // merged内に複数あったら面積小さすぎるものを抜く
                             var validframe = merged.Where(p => p.GetArea() > 4.0).ToList();
 
-                            var nexthist = new LinkedList<State>(current.History);
-                            nexthist.AddLast(current);
-
                             var nextstate = new State(current.UnusedFlags & ((1UL << pi) ^ ulong.MaxValue)) // 未使用フラグを折る
                             {
-                                History = nexthist,
+                                Parent = current,
                                 Piece = ppoly
                             };
 
                             // 全埋めか残り面積が一定以下になったら返す
                             if (validframe.Count == 0 || merged.GetArea() < 1.6) // 1.6??
                             {
-                                nexthist.AddLast(nextstate);
                                 return nextstate;
                             }
 
@@ -180,7 +175,6 @@ namespace Procon27Comp.Solvers
                                 }
 
                                 nextstate.CurrentFrame = nextframe;
-                                nextstate.Piece = ppoly;
 
                                 var res = Update(nextstate);
                                 if (res != null)
