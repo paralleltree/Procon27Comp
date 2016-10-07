@@ -39,7 +39,7 @@ namespace Procon27Comp.Components
                         string[] s = reader.ReadLine().Split(' ');
                         vlist.Add(new Vector2(float.Parse(s[0]), float.Parse(s[1])));
                     }
-                    flist.Add(new Frame(vlist));
+                    flist.Add(new Frame(vlist.Distinct()));
                 }
 
                 int pcount = int.Parse(reader.ReadLine());
