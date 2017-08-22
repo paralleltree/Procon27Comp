@@ -67,6 +67,7 @@ namespace Procon27Comp.Solvers
         public State Update(State current)
         {
             // TODO: 埋めきったかチェックして返す
+            //var rnd = new Random();
             Polygon2 fpolygon = current.CurrentFrame.GetPolygon();
 
             // わくの面積がほぼ消えたら返す
@@ -74,7 +75,8 @@ namespace Procon27Comp.Solvers
             if (Math.Abs(fpolygon.GetArea()) < 10.0)
                 return current;
 
-            foreach (var fn in GetNextFrameVertex(current.CurrentFrame))
+            //bool tried = false;
+            foreach (var fn in GetNextFrameVertex(current.CurrentFrame)) // 目標頂点
             {
                 Vertex fv = fn.Value;
                 // 未使用のピースについて探索
@@ -89,6 +91,18 @@ namespace Procon27Comp.Solvers
                         // とりあえず+2度まで許容
                         if (pv.Angle - fv.Angle > 2 * Math.PI / 180) continue; // そもそもピースが入らない角度なら飛ばす
                         if (fv.Angle < 10 * Math.PI / 180) continue; // 折れるほど細ければ飛ばす
+
+                        //tried = true;
+
+                        // 対象頂点(pv)を原点に移動して回転
+                        // とりあえずわく頂点の次への辺を基準に
+                        // 両方反時計回り前提
+                        //Numerics.Vector2 fvec = fn.GetNextValue().Location - fn.Value.Location;
+                        //Numerics.Vector2 pvec = pn.GetNextValue().Location - pn.Value.Location;
+                        //float angle = (float)VectorHelper.CalcAngle(fvec, pvec);
+                        //bool ispieceleft = Numerics.Vector3.Cross(new Numerics.Vector3(fvec, 0), new Numerics.Vector3(pvec, 0)).Z > 0;
+                        //var transformed = piece.Offset(-pv.X, pv.Y).Rotate(ispieceleft ? -angle : angle);
+                        //var ppolygon = new Polygon2(transformed.GetPolygon().Single().Transform(fv.X, fv.Y));
 
                         // 候補を判定
                         foreach (var ppoly in GetNextPieces(piece, pn, fn))
@@ -110,7 +124,8 @@ namespace Procon27Comp.Solvers
                                 canvas.SaveAsPng(@"C:\Users\paltee\Desktop\merging.png");
                             }
 
-                            // わくからはみ出た面積が大きければ飛ばす
+                            // Unionとって枠と面積が等しいか
+                            // intersetがピースと等しいか
                             double ia = Math.Abs(intersect.GetArea());
 
                             // bouding-boxではみ出しから最長の辺を縦にして縦横比を見る。極端に小さければ飛ばす
@@ -151,6 +166,11 @@ namespace Procon27Comp.Solvers
                             // merged内に複数あったら面積小さすぎるものを抜く
                             var validframe = merged.Where(p => Math.Abs(p.GetArea()) > 4.0).ToList();
 
+                            // 更新作業
+                            //var nexthist = new LinkedList<State>(current.Parent);
+                            //nexthist.AddLast(current);
+
+
                             var nextstate = new State(current.UnusedFlags & ((1UL << pi) ^ ulong.MaxValue)) // 未使用フラグを折る
                             {
                                 Parent = current,
@@ -177,6 +197,8 @@ namespace Procon27Comp.Solvers
                                 .Select(p => p.Point.Value);
                                 var nextframe = new Frame(validvertex.Select(p => new Numerics.Vector2((float)p.X, (float)p.Y)));
 
+                                // TODO: とんがりコーンを取り除く？
+                                // 重なった角を除く？
                                 // Nanとか無効な角を除く
                                 while (true)
                                 {
@@ -216,7 +238,8 @@ namespace Procon27Comp.Solvers
                 break;
             }
 
-            return null;
+            //if (tried) return current; // 試してダメならおしまい？
+            return null; // そもそも置けそうなのに結局置けなかった
         }
 
         // ピースの頂点とわくの頂点をもらってわく頂点の左右の辺にくっつける位置でピースを返す
@@ -227,7 +250,8 @@ namespace Procon27Comp.Solvers
                 float angle = (float)VectorHelper.CalcAngle(fvec, pvec);
                 bool ispieceleft = Numerics.Vector3.Cross(new Numerics.Vector3(fvec, 0), new Numerics.Vector3(pvec, 0)).Z > 0;
                 var transformed = piece.Offset(-piecen.Value.X, -piecen.Value.Y).Rotate(ispieceleft ? -angle : angle);
-                return new Polygon2(transformed.GetPolygon().Single().Transform(framen.Value.X, framen.Value.Y));
+                var res = new Polygon2(transformed.GetPolygon().Single().Transform(framen.Value.X, framen.Value.Y));
+                return res;
             };
             yield return transform(
                 framen.GetPreviousValue().Location - framen.Value.Location,
@@ -247,25 +271,73 @@ namespace Procon27Comp.Solvers
                     (v.GetNextValue().Location - v.Value.Location).LengthSquared();
                 dic.Add(v, dist);
             }
-            return dic.OrderBy(p => p.Value).OrderBy(p => p.Key.Value.Angle).Select(p => p.Key);
+            return dic.OrderBy(p => p.Key.Value.Angle).Select(p => p.Key);
+        }
+    }
+
+    public class Operation
+    {
+        public Vector2 Offset { get; set; }
+        public double RotateAngle { get; set; }
+
+        /// <summary>
+        /// <see cref="Offset"/>で指定された座標だけ平行移動してから
+        /// <see cref="RotateAngle"/>で指定した角度の回転を適用した<see cref="Polygon2"/>を返します。
+        /// </summary>
+        /// <param name="p">適用対象の<see cref="Piece"/></param>
+        /// <returns>変換された<see cref="Polygon2"/></returns>
+        public Polygon2 ApplyTransform(Piece p)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class PieceState
+    {
+        public Piece Piece { get; }
+        public Operation Operation { get; }
+
+        public PieceState(Piece piece, Operation operation)
+        {
+            Piece = piece;
+            Operation = operation;
+        }
+
+        public Polygon2 Calculate()
+        {
+            throw new NotImplementedException();
         }
     }
 
     public static class PolygonCalculation
     {
+        // 減算対象が内側にあると内側しか返さない
+        private static PolygonDifferenceOperation DifferenceOperation = new PolygonDifferenceOperation();
+        private static PolygonIntersectionOperation IntersectionOperation = new PolygonIntersectionOperation();
+        // 積しか返さない。
+        private static PolygonUnionOperation UnionOperation = new PolygonUnionOperation();
+
         public static IPlanarGeometry Difference(Polygon2 a, Polygon2 b)
         {
             return a.GetGpcPolygon().Clip(GpcWrapper.GpcOperation.Difference, b.GetGpcPolygon()).GetPolygon();
+            //return DifferenceOperation.Difference(a, b);
         }
 
         public static IPlanarGeometry Intersect(Polygon2 a, Polygon2 b)
         {
             return a.GetGpcPolygon().Clip(GpcWrapper.GpcOperation.Intersection, b.GetGpcPolygon()).GetPolygon();
+            //return IntersectionOperation.Intersect(a, b);
         }
 
         public static IPlanarGeometry Union(Polygon2 a, Polygon2 b)
         {
             return a.GetGpcPolygon().Clip(GpcWrapper.GpcOperation.Union, b.GetGpcPolygon()).GetPolygon();
+            //return UnionOperation.Union(a, b);
+        }
+
+        public static IPlanarGeometry Invert(Polygon2 a)
+        {
+            return PolygonInverseOperation.Invert(a);
         }
     }
 }

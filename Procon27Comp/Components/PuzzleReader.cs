@@ -51,6 +51,7 @@ namespace Procon27Comp.Components
                     for (int j = 0; j < vcount; j++)
                     {
                         string[] s = reader.ReadLine().Split(' ');
+                        // TODO: スケールファクタ
                         vlist.Add(new Vector2(float.Parse(s[0]), float.Parse(s[1])));
                     }
                     plist.Add(new Piece(vlist.Distinct()));
