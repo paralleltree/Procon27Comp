@@ -36,14 +36,14 @@ namespace Procon27Comp.Components
             }
             bool isclockwise = s > 0; // ディスプレイの座標系(X軸: 右方向, Y軸: 下方向)なので一般の場合と符号が逆
 
-            foreach (var v in isclockwise ? new LinkedList<Vector2>(list.Reverse()).GetNodes() : list.GetNodes())
+            foreach (var v in isclockwise ? list.GetNodes() : new LinkedList<Vector2>(list.Reverse()).GetNodes())
             {
                 double angle = GetAngle(v.GetPreviousValue(), v.Value, v.GetNextValue());
                 Vertexes.AddLast(new Vertex(v.Value, angle));
             }
         }
 
-        //反時計回り前提で角度計算
+        // 時計回り前提で角度計算
         protected double GetAngle(Vector2 prev, Vector2 middle, Vector2 next)
         {
             var pv = Vector2.Subtract(middle, prev);
