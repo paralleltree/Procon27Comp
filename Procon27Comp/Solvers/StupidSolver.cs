@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
 
 using Vertesaur;
 using Vertesaur.PolygonOperation;
@@ -111,7 +112,7 @@ namespace Procon27Comp.Solvers
                                     ppoly.DrawToImage(g, new Pen(Color.DarkRed));
                                     intersect.DrawToImage(g, new Pen(Color.Blue));
                                 });
-                                canvas.SaveAsPng(@"C:\Users\paltee\Desktop\merging.png");
+                                canvas.SaveAsPng(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "merging.png"));
                             }
 
                             // わくからはみ出た面積が大きければ飛ばす
@@ -130,7 +131,7 @@ namespace Procon27Comp.Solvers
                                     fpolygon.DrawToImage(g, new Pen(Color.Green));
                                     merged.DrawToImage(g, new Pen(Color.DarkOrange));
                                 });
-                                canvas.SaveAsPng(@"C:\Users\paltee\Desktop\merged.png");
+                                canvas.SaveAsPng(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "merged.png"));
                             }
 
                             // merged内に複数あったら面積小さすぎるものを抜く
@@ -178,7 +179,7 @@ namespace Procon27Comp.Solvers
                                         fpolygon.DrawToImage(g, new Pen(Color.Green));
                                         nextframe.GetPolygon().DrawToImage(g, new Pen(Color.DarkOrange));
                                     });
-                                    canvas.SaveAsPng(@"C:\Users\paltee\Desktop\merged_corrected.png");
+                                    canvas.SaveAsPng(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "merged_corrected.png"));
                                 }
 
                                 nextstate.CurrentFrame = nextframe;
