@@ -78,7 +78,11 @@ namespace Procon27Comp.Solvers
             {
                 Vertex fv = fn.Value;
                 // 未使用のピースについて探索
-                foreach (int pi in current.EnumerateUnusedPieceIndices())
+                foreach (int pi in current.EnumerateUnusedPieceIndices().OrderBy(p =>
+                {
+                    var poly = Puzzle.Pieces[p].GetPolygon();
+                    return Math.Abs(poly.GetMagnitude() / poly.GetArea());
+                }))
                 {
                     piececounter++;
                     Piece piece = Puzzle.Pieces[pi];
@@ -229,12 +233,14 @@ namespace Procon27Comp.Solvers
                 var transformed = piece.Offset(-piecen.Value.X, -piecen.Value.Y).Rotate(ispieceleft ? -angle : angle);
                 return new Polygon2(transformed.GetPolygon().Single().Transform(framen.Value.X, framen.Value.Y));
             };
-            yield return transform(
+            var prevItem = transform(
                 framen.GetPreviousValue().Location - framen.Value.Location,
                 piecen.GetPreviousValue().Location - piecen.Value.Location);
-            yield return transform(
+            var nextItem = transform(
                 framen.GetNextValue().Location - framen.Value.Location,
                 piecen.GetNextValue().Location - piecen.Value.Location);
+            if (prevItem != null) yield return prevItem;
+            if (nextItem != null) yield return nextItem;
         }
 
         // 次のわくのターゲット頂点を返す(わく頂点の評価関数)
@@ -247,7 +253,7 @@ namespace Procon27Comp.Solvers
                     (v.GetNextValue().Location - v.Value.Location).LengthSquared();
                 dic.Add(v, dist);
             }
-            return dic.OrderBy(p => p.Value).OrderBy(p => p.Key.Value.Angle).Select(p => p.Key);
+            return dic.OrderBy(p => p.Key.Value.Angle).ThenBy(p => p.Value).Select(p => p.Key);
         }
     }
 
