@@ -117,27 +117,8 @@ namespace Procon27Comp.Solvers
                             // わくからはみ出た面積が大きければ飛ばす
                             double ia = Math.Abs(intersect.GetArea());
 
-                            // bouding-boxではみ出しから最長の辺を縦にして縦横比を見る。極端に小さければ飛ばす
-                            var boxrates = ((Polygon2)PolygonCalculation.Difference(ppoly, intersect))
-                                .Select(p =>
-                                {
-                                    var lintersect = new LinkedList<Numerics.Vector2>(p.Select(q => new Numerics.Vector2((float)q.X, (float)q.Y)));
-                                    var longvec = lintersect.GetNodes().Select(q => q.GetNextValue() - q.Value)
-                                          .OrderByDescending(q => q.LengthSquared())
-                                          .First();
-                                    float angle = (float)VectorHelper.CalcAngle(longvec, Numerics.Vector2.UnitY);
-                                    bool isonleft = Numerics.Vector3.Cross(new Numerics.Vector3(Numerics.Vector2.UnitY, 0), new Numerics.Vector3(longvec, 0)).Z > 0;
-                                    var transformed = lintersect.Rotate(isonleft ? -angle : angle).ToList();
-                                    var tpoly = new Polygon2(transformed.Select(q => new Point2(q.X, q.Y)));
-                                    var box = tpoly.GetMbr();
-                                    return box.Width / box.Height;
-                                });
-
-                            if (Math.Abs(ia - Math.Abs(ppoly.GetArea())) > 10.0  /* && */)
-                            {
-                                // 0-1の比の間で判定
-                                if (boxrates.Any(p => p > 0.08)) continue;
-                            }
+                            // わくと重なってたらダメ
+                            if (Math.Abs(ia - Math.Abs(ppoly.GetArea())) > 1.2) continue;
                             // 更新
                             var merged = (Polygon2)PolygonCalculation.Difference(fpolygon, ppoly);
 
@@ -229,6 +210,7 @@ namespace Procon27Comp.Solvers
             Func<Numerics.Vector2, Numerics.Vector2, Polygon2> transform = (fvec, pvec) =>
             {
                 float angle = (float)VectorHelper.CalcAngle(fvec, pvec);
+                if (Math.Abs(angle % (Math.PI / 2)) > 1E-4) return null; // 90度以外は飛ばす
                 bool ispieceleft = Numerics.Vector3.Cross(new Numerics.Vector3(fvec, 0), new Numerics.Vector3(pvec, 0)).Z > 0;
                 var transformed = piece.Offset(-piecen.Value.X, -piecen.Value.Y).Rotate(ispieceleft ? -angle : angle);
                 return new Polygon2(transformed.GetPolygon().Single().Transform(framen.Value.X, framen.Value.Y));
