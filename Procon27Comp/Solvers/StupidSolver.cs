@@ -96,13 +96,14 @@ namespace Procon27Comp.Solvers
                         if (fv.Angle < 10 * Math.PI / 180) continue; // 折れるほど細ければ飛ばす
 
                         // 候補を判定
-                        foreach (var ppoly in GetNextPieces(piece, pn, fn))
+                        foreach (var nextpiece in GetNextPieces(piece, pn, fn))
                         {
                             tryingcounter++;
                             Console.WriteLine("{0,2}, {1,2}, {2,3}", piececounter, vertexcounter, tryingcounter);
 
                             // 重複面積
-                            var intersect = (Polygon2)PolygonCalculation.Intersect(ppoly, fpolygon);
+                            var intersect = (Polygon2)PolygonCalculation.Intersect(nextpiece.GetPolygon(), fpolygon);
+
 #if DEBUG
                             using (var canvas = new Bitmap(picSize.Width, picSize.Height))
                             {
@@ -110,7 +111,7 @@ namespace Procon27Comp.Solvers
                                 {
                                     foreach (var f in Puzzle.Frames) f.GetPolygon().DrawToImage(g, new Pen(Color.Aquamarine));
                                     fpolygon.DrawToImage(g, new Pen(Color.Green));
-                                    ppoly.DrawToImage(g, new Pen(Color.DarkRed));
+                                    nextpiece.GetPolygon().DrawToImage(g, new Pen(Color.DarkRed));
                                     intersect.DrawToImage(g, new Pen(Color.Blue));
                                 });
                                 canvas.SaveAsPng(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "merging.png"));
@@ -121,9 +122,9 @@ namespace Procon27Comp.Solvers
                             double ia = Math.Abs(intersect.GetArea());
 
                             // わくと重なってたらダメ
-                            if (Math.Abs(ia - Math.Abs(ppoly.GetArea())) > 1.2) continue;
+                            if (Math.Abs(ia - Math.Abs(nextpiece.GetPolygon().GetArea())) > 1.2) continue;
                             // 更新
-                            var merged = (Polygon2)PolygonCalculation.Difference(fpolygon, ppoly);
+                            var merged = (Polygon2)PolygonCalculation.Difference(fpolygon, nextpiece.GetPolygon());
 
 #if DEBUG
                             using (var canvas = new Bitmap(picSize.Width, picSize.Height))
@@ -144,7 +145,7 @@ namespace Procon27Comp.Solvers
                             var nextstate = new State(current.UnusedFlags & ((1UL << pi) ^ ulong.MaxValue)) // 未使用フラグを折る
                             {
                                 Parent = current,
-                                Piece = ppoly
+                                Piece = nextpiece
                             };
 
                             // 全埋めか残り面積が一定以下になったら返す
@@ -212,15 +213,15 @@ namespace Procon27Comp.Solvers
         }
 
         // ピースの頂点とわくの頂点をもらってわく頂点の左右の辺にくっつける位置でピースを返す
-        IEnumerable<Polygon2> GetNextPieces(Piece piece, LinkedListNode<Vertex> piecen, LinkedListNode<Vertex> framen)
+        IEnumerable<Piece> GetNextPieces(Piece piece, LinkedListNode<Vertex> piecen, LinkedListNode<Vertex> framen)
         {
-            Func<Numerics.Vector2, Numerics.Vector2, Polygon2> transform = (fvec, pvec) =>
+            Func<Numerics.Vector2, Numerics.Vector2, Piece> transform = (fvec, pvec) =>
             {
                 float angle = (float)VectorHelper.CalcAngle(fvec, pvec);
-                if (Math.Abs(angle % (Math.PI / 2)) > 1E-4) return null; // 90度以外は飛ばす
+                if (Math.Abs(angle % (Math.PI / 2)) > 1E-4) return null; // 90度以外はそもそも回転後に頂点が格子状にないので飛ばす
                 bool ispieceleft = Numerics.Vector3.Cross(new Numerics.Vector3(fvec, 0), new Numerics.Vector3(pvec, 0)).Z > 0;
-                var transformed = piece.Offset(-piecen.Value.X, -piecen.Value.Y).Rotate(ispieceleft ? -angle : angle);
-                return new Polygon2(transformed.GetPolygon().Single().Transform(framen.Value.X, framen.Value.Y));
+                var transformed = piece.Offset(-piecen.Value.X, -piecen.Value.Y).Rotate(ispieceleft ? -angle : angle).Offset(framen.Value.X, framen.Value.Y);
+                return transformed;
             };
             var prevItem = transform(
                 framen.GetPreviousValue().Location - framen.Value.Location,

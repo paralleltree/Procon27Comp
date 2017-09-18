@@ -14,7 +14,7 @@ namespace Procon27Comp.Components
         /// <summary>
         /// 移動したピース
         /// </summary>
-        public Polygon2 Piece { get; set; }
+        public Piece Piece { get; set; }
 
         /// <summary>
         /// 親の状態
