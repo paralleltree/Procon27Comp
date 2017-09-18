@@ -14,7 +14,7 @@ namespace Procon27Comp
     {
         static void Main(string[] args)
         {
-            var puzzle = new PuzzleReader(args[0]).Read();
+            var puzzle = Puzzle.ReadFromData(File.ReadAllText(args[0]).Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries));
 
             Puzzle reduced = puzzle;
             for (int i = 0; i < 10; i++) reduced = reduced.ReduceByEdge(2);
