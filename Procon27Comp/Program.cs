@@ -17,12 +17,11 @@ namespace Procon27Comp
             var puzzle = Puzzle.ReadFromData(File.ReadAllText(args[0]).Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries));
 
             Puzzle reduced = puzzle;
-            for (int i = 0; i < 10; i++) reduced = reduced.ReduceByEdge(2);
-            for (int i = 0; i < 10; i++) reduced = reduced.ReduceByEdge(1);
-            for (int i = 0; i < 10; i++) reduced = reduced.ReduceByEdge(2);
-            for (int i = 0; i < 10; i++) reduced = reduced.ReduceByEdge(1);
-            for (int i = 0; i < 10; i++) reduced = reduced.ReduceByEdge(2);
-            for (int i = 0; i < 10; i++) reduced = reduced.ReduceByEdge(1);
+            for (int j = 0; j < 3; j++)
+            {
+                for (int i = 0; i < 4; i++) reduced = reduced.ReduceByEdge(2);
+                for (int i = 0; i < 2; i++) reduced = reduced.ReduceByEdge(1);
+            }
 
             var solver = new StupidSolver(reduced);
             solver.Solve();
