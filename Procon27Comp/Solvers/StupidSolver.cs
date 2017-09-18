@@ -103,6 +103,7 @@ namespace Procon27Comp.Solvers
 
                             // 重複面積
                             var intersect = (Polygon2)PolygonCalculation.Intersect(ppoly, fpolygon);
+#if DEBUG
                             using (var canvas = new Bitmap(picSize.Width, picSize.Height))
                             {
                                 canvas.WorkWithGraphic(g =>
@@ -114,6 +115,7 @@ namespace Procon27Comp.Solvers
                                 });
                                 canvas.SaveAsPng(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "merging.png"));
                             }
+#endif
 
                             // わくからはみ出た面積が大きければ飛ばす
                             double ia = Math.Abs(intersect.GetArea());
@@ -123,6 +125,7 @@ namespace Procon27Comp.Solvers
                             // 更新
                             var merged = (Polygon2)PolygonCalculation.Difference(fpolygon, ppoly);
 
+#if DEBUG
                             using (var canvas = new Bitmap(picSize.Width, picSize.Height))
                             {
                                 canvas.WorkWithGraphic(g =>
@@ -133,6 +136,7 @@ namespace Procon27Comp.Solvers
                                 });
                                 canvas.SaveAsPng(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "merged.png"));
                             }
+#endif
 
                             // merged内に複数あったら面積小さすぎるものを抜く
                             var validframe = merged.Where(p => Math.Abs(p.GetArea()) > 4.0).ToList();
@@ -171,6 +175,7 @@ namespace Procon27Comp.Solvers
                                     nextframe = new Frame(correct.Select(p => p.Location));
                                 }
 
+#if DEBUG
                                 using (var canvas = new Bitmap(picSize.Width, picSize.Height))
                                 {
                                     canvas.WorkWithGraphic(g =>
@@ -181,6 +186,7 @@ namespace Procon27Comp.Solvers
                                     });
                                     canvas.SaveAsPng(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "merged_corrected.png"));
                                 }
+#endif
 
                                 nextstate.CurrentFrame = nextframe;
 
