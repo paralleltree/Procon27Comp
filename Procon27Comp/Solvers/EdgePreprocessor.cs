@@ -19,8 +19,9 @@ namespace Procon27Comp.Solvers
         /// 繰り返し適用することでより多くのピースを削減できる場合があります。
         /// </summary>
         /// <param name="puzzle">前処理を行う<see cref="Puzzle"/></param>
+        /// <param name="edgeCount">最低一致辺数</param>
         /// <returns>処理を行ったピースを格納した<see cref="Puzzle"/></returns>
-        public static Puzzle ReduceByEdge(this Puzzle puzzle)
+        public static Puzzle ReduceByEdge(this Puzzle puzzle, int edgeCount)
         {
             var plist = new List<Piece>(puzzle.Pieces);
             bool[] used = new bool[plist.Count];
@@ -32,7 +33,7 @@ namespace Procon27Comp.Solvers
                 for (int j = 0; j < plist.Count; j++)
                 {
                     if (used[j] || i == j) continue;
-                    var merged = Merge(plist[i], plist[j]).ToList();
+                    var merged = Merge(plist[i], plist[j], edgeCount).ToList();
                     if (merged.Count > 0 && (merged.Count == 1 || merged.Skip(1).All(p => p.GetPolygon().SpatiallyEqual(merged[0].GetPolygon()))))
                     {
                         mergedPieces.Add(merged.First());
@@ -55,7 +56,7 @@ namespace Procon27Comp.Solvers
             return new Puzzle(puzzle.Frames, plist.Where((p, i) => !used[i]).ToList());
         }
 
-        public static IEnumerable<MergedPiece> Merge(Piece a, Piece b)
+        public static IEnumerable<MergedPiece> Merge(Piece a, Piece b, int edgeCount)
         {
             var reversedA = a.Vertexes.Reverse().ToList();
             var vlistB = b.Vertexes.ToList();
@@ -72,7 +73,7 @@ namespace Procon27Comp.Solvers
                         vecB = vlistB[(j + k + 1) % vlistB.Count].Location - vlistB[(j + k) % vlistB.Count].Location;
                         k++;
                     } while (vecA == vecB);
-                    if (--k < 2) continue;
+                    if (--k < edgeCount) continue; // 指定の数の辺以上連続で一致していなければなし
 
                     Func<Numerics.Vector2, Numerics.Vector2, MergedPiece> transform = (avec, bvec) =>
                     {
