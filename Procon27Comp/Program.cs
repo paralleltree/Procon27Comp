@@ -15,7 +15,15 @@ namespace Procon27Comp
         static void Main(string[] args)
         {
             var puzzle = new PuzzleReader(args[0]).Read();
-            var reduced = Enumerable.Range(0, 10).Aggregate(puzzle, (p, i) => p.ReduceByEdge(2));
+
+            Puzzle reduced = puzzle;
+            for (int i = 0; i < 10; i++) reduced = reduced.ReduceByEdge(2);
+            for (int i = 0; i < 10; i++) reduced = reduced.ReduceByEdge(1);
+            for (int i = 0; i < 10; i++) reduced = reduced.ReduceByEdge(2);
+            for (int i = 0; i < 10; i++) reduced = reduced.ReduceByEdge(1);
+            for (int i = 0; i < 10; i++) reduced = reduced.ReduceByEdge(2);
+            for (int i = 0; i < 10; i++) reduced = reduced.ReduceByEdge(1);
+
             var solver = new StupidSolver(reduced);
             solver.Solve();
             foreach (var s in solver.Solutions)
