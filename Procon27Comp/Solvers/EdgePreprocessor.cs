@@ -27,24 +27,25 @@ namespace Procon27Comp.Solvers
             for (int i = 0; i < plist.Count; i++)
             {
                 if (used[i]) continue;
-                var mergedPieces = new List<Polygon2>();
+                var mergedPieces = new List<MergedPiece>();
                 bool[] localUsed = new bool[plist.Count];
                 for (int j = 0; j < plist.Count; j++)
                 {
                     if (used[j] || i == j) continue;
                     var merged = Merge(plist[i], plist[j]).ToList();
-                    if (merged.Count > 0 && (merged.Count == 1 || merged.Skip(1).All(p => p.SpatiallyEqual(merged[0]))))
+                    if (merged.Count > 0 && (merged.Count == 1 || merged.Skip(1).All(p => p.SpatiallyEqual(merged[0]))) && merged.First().Count == 1)
                     {
-                        mergedPieces.Add(merged.First());
+                        mergedPieces.Add(new MergedPiece(merged.First().First().Select(p => new Numerics.Vector2((float)p.X, (float)p.Y)), new Piece[] { plist[i], plist[j] }));
                         localUsed[j] = true;
                     }
                 }
 
                 if (mergedPieces.Count == 0) continue;
-                var union = mergedPieces.Aggregate((p, q) => (Polygon2)PolygonCalculation.Union(p, q));
-                if (union.GetArea() == mergedPieces.Sum(p => p.GetArea()))
+                var mergedpoly = mergedPieces.Select(p => p.GetPolygon());
+                var union = mergedpoly.Aggregate((p, q) => (Polygon2)PolygonCalculation.Union(p, q));
+                if (union.GetArea() == mergedpoly.Sum(p => p.GetArea()))
                 {
-                    plist[i] = new Piece(union.First().Select(p => new Numerics.Vector2((float)p.X, (float)p.Y)));
+                    plist[i] = new MergedPiece(union.First().Select(p => new Numerics.Vector2((float)p.X, (float)p.Y)), mergedPieces.SelectMany(p => p.ComponentPieces).Distinct());
                     for (int j = 0; j < plist.Count; j++)
                     {
                         if (localUsed[j]) used[j] = true;
