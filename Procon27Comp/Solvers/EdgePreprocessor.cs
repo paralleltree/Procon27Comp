@@ -33,9 +33,9 @@ namespace Procon27Comp.Solvers
                 {
                     if (used[j] || i == j) continue;
                     var merged = Merge(plist[i], plist[j]).ToList();
-                    if (merged.Count > 0 && (merged.Count == 1 || merged.Skip(1).All(p => p.SpatiallyEqual(merged[0]))) && merged.First().Count == 1)
+                    if (merged.Count > 0 && (merged.Count == 1 || merged.Skip(1).All(p => p.GetPolygon().SpatiallyEqual(merged[0].GetPolygon()))))
                     {
-                        mergedPieces.Add(new MergedPiece(merged.First().First().Select(p => new Numerics.Vector2((float)p.X, (float)p.Y)), new Piece[] { plist[i], plist[j] }));
+                        mergedPieces.Add(merged.First());
                         localUsed[j] = true;
                     }
                 }
@@ -55,7 +55,7 @@ namespace Procon27Comp.Solvers
             return new Puzzle(puzzle.Frames, plist.Where((p, i) => !used[i]).ToList());
         }
 
-        public static IEnumerable<Polygon2> Merge(Piece a, Piece b)
+        public static IEnumerable<MergedPiece> Merge(Piece a, Piece b)
         {
             var reversedA = a.Vertexes.Reverse().ToList();
             var vlistB = b.Vertexes.ToList();
@@ -74,7 +74,7 @@ namespace Procon27Comp.Solvers
                     } while (vecA == vecB);
                     if (--k < 2) continue;
 
-                    Func<Numerics.Vector2, Numerics.Vector2, Polygon2> transform = (avec, bvec) =>
+                    Func<Numerics.Vector2, Numerics.Vector2, MergedPiece> transform = (avec, bvec) =>
                     {
                         var nodeA = reversedA[i].Location;
                         var nodeB = vlistB[j].Location;
@@ -84,7 +84,10 @@ namespace Procon27Comp.Solvers
                         var transformed = b.Offset(-nodeB.X, -nodeB.Y).Rotate(isBLeft ? -angle : angle).Offset(nodeA.X, nodeA.Y);
                         if (((Polygon2)PolygonCalculation.Intersect(transformed.GetPolygon(), a.GetPolygon())).GetArea() > 0)
                             return null;
-                        return new Polygon2((Polygon2)PolygonCalculation.Union(a.GetPolygon(), transformed.GetPolygon()));
+                        var union = (Polygon2)PolygonCalculation.Union(a.GetPolygon(), transformed.GetPolygon());
+                        if (union.Count > 1) return null;
+                        return new MergedPiece(union.Single().Select(p => new Numerics.Vector2((float)p.X, (float)p.Y)),
+                            new Piece[] { a, transformed });
                     };
                     vecA = reversedA[(i + 1) % reversedA.Count].Location - reversedA[i % reversedA.Count].Location;
                     vecB = vlistB[(j + 1) % vlistB.Count].Location - vlistB[j % vlistB.Count].Location;
