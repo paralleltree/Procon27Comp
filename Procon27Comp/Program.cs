@@ -25,10 +25,11 @@ namespace Procon27Comp
 
             var solver = new StupidSolver(reduced);
             solver.Solve();
-            foreach (var s in solver.Solutions)
-            {
-                s.DumpToImage(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "out.png"));
-            }
+
+            var solution = solver.Solutions.Single();
+            string outputPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "out.png");
+            solution.DumpToImage(outputPath);
+            System.Diagnostics.Process.Start(outputPath);
         }
     }
 }
