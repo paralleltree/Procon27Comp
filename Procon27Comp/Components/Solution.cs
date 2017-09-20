@@ -32,6 +32,7 @@ namespace Procon27Comp
             {
                 canvas.WorkWithGraphic(g =>
                 {
+                    g.FillRectangle(Brushes.White, new Rectangle(0, 0, 1280, 720));
                     // 枠描画
                     foreach (var frame in Puzzle.Frames)
                     {
