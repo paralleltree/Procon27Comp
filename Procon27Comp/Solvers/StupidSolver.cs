@@ -19,9 +19,13 @@ namespace Procon27Comp.Solvers
     /// </summary>
     public class StupidSolver
     {
+        private DateTime startedTime;
+        private DateTime finishedTime;
         private Size picSize = new Size(1280, 720);
         public Puzzle Puzzle { get; }
         public List<Solution> Solutions { get; }
+
+        public TimeSpan ExecutionTime { get { return finishedTime - startedTime; } }
 
         public StupidSolver(Puzzle puzzle)
         {
@@ -32,6 +36,7 @@ namespace Procon27Comp.Solvers
         public void Solve()
         {
             if (Solutions.Count > 0) return;
+            startedTime = DateTime.Now;
             var ansdic = new Dictionary<Frame, State>(Puzzle.Frames.Count);
 
             // 初期状態
@@ -46,6 +51,7 @@ namespace Procon27Comp.Solvers
                     CurrentFrame = f
                 };
                 State res = Update(first);
+                finishedTime = DateTime.Now;
                 if (res == null) return; // 失敗
                 Console.WriteLine("Found");
                 ansdic.Add(f, res);
@@ -72,13 +78,34 @@ namespace Procon27Comp.Solvers
 
             // わくの面積がほぼ消えたら返す
             // TODO: わくと残りピースの面積比較
-            if (Math.Abs(fpolygon.GetArea()) < 10.0)
+            if (Math.Abs(fpolygon.GetArea()) < 1.0)
                 return current;
+
+            // わくの形状に一致するピースがあればそいつをはめてみる
+            foreach (int pi in current.EnumerateUnusedPieceIndices())
+            {
+                for (var fn = current.CurrentFrame.Vertexes.First; fn != null; fn = fn.Next)
+                {
+                    var currentf = fn;
+                    var currentp = Puzzle.Pieces[pi];
+
+                    for (var pn = currentp.Vertexes.First; pn != null; pn = pn.Next)
+                    {
+                        var currentpn = pn;
+
+                    }
+                }
+            }
+
 
             foreach (var fn in GetNextFrameVertex(current.CurrentFrame))
             {
+                float distl = (fn.GetNextValue().Location - fn.Value.Location).LengthSquared();
+                float distr = (fn.GetPreviousValue().Location - fn.Value.Location).LengthSquared();
+
                 Vertex fv = fn.Value;
                 // 未使用のピースについて探索
+                //foreach (int pi in current.EnumerateUnusedPieceIndices().OrderByDescending(p => Math.Abs(Puzzle.Pieces[p].GetPolygon().GetArea())))
                 foreach (int pi in current.EnumerateUnusedPieceIndices().OrderBy(p =>
                 {
                     var poly = Puzzle.Pieces[p].GetPolygon();
@@ -113,6 +140,7 @@ namespace Procon27Comp.Solvers
                                     fpolygon.DrawToImage(g, new Pen(Color.Green));
                                     nextpiece.GetPolygon().DrawToImage(g, new Pen(Color.DarkRed));
                                     intersect.DrawToImage(g, new Pen(Color.Blue));
+                                    if (intersect != null) intersect.DrawToImage(g, new Pen(Color.Blue));
                                 });
                                 canvas.SaveAsPng(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "merging.png"));
                             }
@@ -133,7 +161,7 @@ namespace Procon27Comp.Solvers
                                 {
                                     foreach (var f in Puzzle.Frames) f.GetPolygon().DrawToImage(g, new Pen(Color.Aquamarine));
                                     fpolygon.DrawToImage(g, new Pen(Color.Green));
-                                    merged.DrawToImage(g, new Pen(Color.DarkOrange));
+                                    if (merged != null) merged.DrawToImage(g, new Pen(Color.DarkOrange));
                                 });
                                 canvas.SaveAsPng(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "merged.png"));
                             }
@@ -230,6 +258,7 @@ namespace Procon27Comp.Solvers
                 framen.GetNextValue().Location - framen.Value.Location,
                 piecen.GetNextValue().Location - piecen.Value.Location);
             if (prevItem != null) yield return prevItem;
+            //if (nextItem != null && piecen.Value.Angle != framen.Value.Angle) yield return nextItem;
             if (nextItem != null) yield return nextItem;
         }
 

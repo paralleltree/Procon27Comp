@@ -89,6 +89,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Components\Solution.cs" />
+    <Compile Include="Solvers\ArrangementHintPreprocessor.cs" />
     <Compile Include="Solvers\EdgePreprocessor.cs" />
     <Compile Include="Solvers\StupidSolver.cs" />
   </ItemGroup>
@@ -100,6 +101,9 @@
     <Content Include="gpc.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="IO\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
