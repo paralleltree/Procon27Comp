@@ -72,7 +72,7 @@ namespace Procon27Comp.Solvers
 
             // わくの面積がほぼ消えたら返す
             // TODO: わくと残りピースの面積比較
-            if (Math.Abs(fpolygon.GetArea()) < 10.0)
+            if (Math.Abs(fpolygon.GetArea()) < 1.0)
                 return current;
 
             foreach (var fn in GetNextFrameVertex(current.CurrentFrame))
