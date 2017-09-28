@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.IO;
 
+using ConcurrentPriorityQueue;
 using Vertesaur;
 using Vertesaur.PolygonOperation;
 using Numerics = System.Numerics;
@@ -41,175 +42,84 @@ namespace Procon27Comp.Solvers
             var forder = Puzzle.Frames;
             foreach (var f in forder.OrderBy(p => Math.Abs(p.GetPolygon().GetArea())))
             {
+                var queue = new ConcurrentPriorityQueue<State, int>();
                 var first = new State(initf)
                 {
-                    CurrentFrame = f
+                    CurrentFrame = new List<Frame>() { f }
                 };
-                State res = Update(first);
-                if (res == null) return; // 失敗
-                Console.WriteLine("Found");
-                ansdic.Add(f, res);
-                initf = res.UnusedFlags; // 未使用ピースを更新
-            }
-            Console.WriteLine("Done");
+                queue.Enqueue(first, 0);
 
-            // 埋まった
-            Solutions.Add(new Solution(Puzzle, ansdic));
-        }
-
-        int piececounter = 0;
-        int vertexcounter = 0;
-        int tryingcounter = 0;
-        /// <summary>
-        /// 1つの枠について探索を進める
-        /// </summary>
-        /// <param name="current">現在の状態</param>
-        /// <returns>見つかった解</returns>
-        public State Update(State current)
-        {
-            // TODO: 埋めきったかチェックして返す
-            Polygon2 fpolygon = current.CurrentFrame.GetPolygon();
-
-            // わくの面積がほぼ消えたら返す
-            // TODO: わくと残りピースの面積比較
-            if (Math.Abs(fpolygon.GetArea()) < 1.0)
-                return current;
-
-            foreach (var fn in GetNextFrameVertex(current.CurrentFrame))
-            {
-                Vertex fv = fn.Value;
-                // 未使用のピースについて探索
-                foreach (int pi in current.EnumerateUnusedPieceIndices().OrderBy(p =>
+                while (queue.Count > 0)
                 {
-                    var poly = Puzzle.Pieces[p].GetPolygon();
-                    return Math.Abs(poly.GetMagnitude() / poly.GetArea());
-                }))
-                {
-                    piececounter++;
-                    Piece piece = Puzzle.Pieces[pi];
-                    foreach (var pn in piece.Vertexes.GetNodes())
+                    var state = queue.Dequeue();
+                    foreach (var frame in state.CurrentFrame)
                     {
-                        vertexcounter++;
-                        Vertex pv = pn.Value;
-                        // とりあえず+2度まで許容
-                        if (pv.Angle - fv.Angle > 2 * Math.PI / 180) continue; // そもそもピースが入らない角度なら飛ばす
-                        if (fv.Angle < 10 * Math.PI / 180) continue; // 折れるほど細ければ飛ばす
+                        var polygonf = frame.GetPolygon();
 
-                        // 候補を判定
-                        foreach (var nextpiece in GetNextPieces(piece, pn, fn))
+                        // わくの各頂点に対して全ピースはめちゃう
+                        foreach (var nodef in frame.Vertexes.GetNodes())
                         {
-                            tryingcounter++;
-                            Console.WriteLine("{0,2}, {1,2}, {2,3}", piececounter, vertexcounter, tryingcounter);
-
-                            // 重複面積
-                            var intersect = (Polygon2)PolygonCalculation.Intersect(nextpiece.GetPolygon(), fpolygon);
-
-#if DEBUG
-                            using (var canvas = new Bitmap(picSize.Width, picSize.Height))
+                            foreach (int pi in state.EnumerateUnusedPieceIndices())
                             {
-                                canvas.WorkWithGraphic(g =>
+                                var piece = Puzzle.Pieces[pi];
+                                foreach (var nodep in piece.Vertexes.GetNodes())
                                 {
-                                    foreach (var f in Puzzle.Frames) f.GetPolygon().DrawToImage(g, new Pen(Color.Aquamarine));
-                                    fpolygon.DrawToImage(g, new Pen(Color.Green));
-                                    nextpiece.GetPolygon().DrawToImage(g, new Pen(Color.DarkRed));
-                                    intersect.DrawToImage(g, new Pen(Color.Blue));
-                                });
-                                canvas.SaveAsPng(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "merging.png"));
-                            }
-#endif
-
-                            // わくからはみ出た面積が大きければ飛ばす
-                            double ia = Math.Abs(intersect.GetArea());
-
-                            // わくと重なってたらダメ
-                            if (Math.Abs(ia - Math.Abs(nextpiece.GetPolygon().GetArea())) > 1.2) continue;
-                            // 更新
-                            var merged = (Polygon2)PolygonCalculation.Difference(fpolygon, nextpiece.GetPolygon());
-
-#if DEBUG
-                            using (var canvas = new Bitmap(picSize.Width, picSize.Height))
-                            {
-                                canvas.WorkWithGraphic(g =>
-                                {
-                                    foreach (var f in Puzzle.Frames) f.GetPolygon().DrawToImage(g, new Pen(Color.Aquamarine));
-                                    fpolygon.DrawToImage(g, new Pen(Color.Green));
-                                    merged.DrawToImage(g, new Pen(Color.DarkOrange));
-                                });
-                                canvas.SaveAsPng(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "merged.png"));
-                            }
-#endif
-
-                            // merged内に複数あったら面積小さすぎるものを抜く
-                            var validframe = merged.Where(p => Math.Abs(p.GetArea()) > 4.0).ToList();
-
-                            var nextstate = new State(current.UnusedFlags & ((1UL << pi) ^ ulong.MaxValue)) // 未使用フラグを折る
-                            {
-                                Parent = current,
-                                Piece = nextpiece
-                            };
-
-                            // 全埋めか残り面積が一定以下になったら返す
-                            if (validframe.Count == 0 || Math.Abs(merged.GetArea()) < 1.6)
-                            {
-                                return nextstate;
-                            }
-
-                            // 残った枠ごとに面積順に呼び出し
-                            bool succeed = true;
-                            foreach (var remaining in validframe.OrderBy(p => Math.Abs(p.GetArea())))
-                            {
-                                // 隣り合う近すぎる頂点を除いてわく作成
-                                var validvertex = new LinkedList<Point2>(remaining).GetNodes().Select(p => new
-                                {
-                                    Point = p,
-                                    Distance = (p.GetNextValue() - p.Value).GetMagnitudeSquared()
-                                })
-                                .Where(p => p.Distance > 2 * 2)
-                                .Select(p => p.Point.Value);
-                                var nextframe = new Frame(validvertex.Select(p => new Numerics.Vector2((float)p.X, (float)p.Y)));
-
-                                // Nanとか無効な角を除く
-                                while (true)
-                                {
-                                    var correct = nextframe.Vertexes.Where(p => !double.IsNaN(p.Angle) && p.Angle > 0.06).ToList();
-                                    if (correct.Count == nextframe.Vertexes.Count) break;
-                                    nextframe = new Frame(correct.Select(p => p.Location));
-                                }
-
-#if DEBUG
-                                using (var canvas = new Bitmap(picSize.Width, picSize.Height))
-                                {
-                                    canvas.WorkWithGraphic(g =>
+                                    foreach (var nextp in GetNextPieces(piece, nodep, nodef))
                                     {
-                                        foreach (var f in Puzzle.Frames) f.GetPolygon().DrawToImage(g, new Pen(Color.Aquamarine));
-                                        fpolygon.DrawToImage(g, new Pen(Color.Green));
-                                        nextframe.GetPolygon().DrawToImage(g, new Pen(Color.DarkOrange));
-                                    });
-                                    canvas.SaveAsPng(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "merged_corrected.png"));
-                                }
-#endif
+                                        var polygonp = nextp.GetPolygon();
+                                        var intersect = (Polygon2)PolygonCalculation.Intersect(polygonf, polygonp);
+                                        if (Math.Abs(polygonp.GetArea()) - Math.Abs(intersect.GetArea()) > 1e-1) continue;
 
-                                nextstate.CurrentFrame = nextframe;
+                                        var merged = (Polygon2)PolygonCalculation.Difference(polygonf, polygonp);
 
-                                var res = Update(nextstate);
-                                if (res != null)
-                                {
-                                    nextstate = res; // 埋めたわくの情報で上書き
-                                }
-                                else
-                                {
-                                    succeed = false;
-                                    break; // 1つでも埋められないわくがあれば次の候補へ
+                                        // 評価値算出
+                                        int score = 0;
+                                        var reversedPiece = polygonp.Single().Select(p => new Numerics.Vector2((float)p.X, (float)p.Y)).ToList();
+                                        var frameList = frame.Vertexes.ToList();
+                                        for (int i = 0; i < reversedPiece.Count; i++)
+                                        {
+                                            for (int j = 0; j < frameList.Count; j++)
+                                            {
+                                                int k = 0;
+                                                Numerics.Vector2 pv, nv;
+                                                do
+                                                {
+                                                    pv = reversedPiece[(i + k) % reversedPiece.Count];
+                                                    nv = frameList[(j + k) % frameList.Count].Location;
+                                                    k++;
+                                                } while (pv == nv);
+                                                if (--k > score) score = k;
+                                            }
+                                        }
+
+                                        // 全埋め or 面積なくなったら返す
+                                        var nextState = new State(state.UnusedFlags & ((1UL << pi) ^ ulong.MaxValue))
+                                        {
+                                            Parent = state,
+                                            Piece = nextp,
+                                            Score = state.Score + score,
+                                            CurrentFrame = merged.Select(p => new Frame(p.Select(q => new Numerics.Vector2((float)q.X, (float)q.Y)))).ToList()
+                                        };
+
+                                        if (merged.Count == 0)
+                                        {
+                                            ansdic.Add(f, nextState);
+                                            initf = nextState.UnusedFlags; // 未使用ピースを更新
+                                            goto nextFrame;
+                                        }
+
+                                        queue.Enqueue(nextState, nextState.Score);
+                                    }
                                 }
                             }
-                            if (succeed) return nextstate;
                         }
                     }
                 }
-                break;
+                nextFrame:;
             }
 
-            return null;
+            // 埋まった
+            Solutions.Add(new Solution(Puzzle, ansdic));
         }
 
         // ピースの頂点とわくの頂点をもらってわく頂点の左右の辺にくっつける位置でピースを返す

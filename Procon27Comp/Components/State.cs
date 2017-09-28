@@ -8,8 +8,10 @@ namespace Procon27Comp.Components
 {
     public class State
     {
+        public int Score { get; set; }
+
         // Polygon2はRing2のリストオブジェクト(i.e. Polygon2 = List<Ring2>)
-        public Frame CurrentFrame { get; set; }
+        public List<Frame> CurrentFrame { get; set; }
 
         /// <summary>
         /// 移動したピース
