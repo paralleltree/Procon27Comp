@@ -52,7 +52,11 @@ namespace Procon27Comp.Solvers
                 while (queue.Count > 0)
                 {
                     var state = queue.Dequeue();
-                    if (state.CurrentFrame.Count == 0) break;
+                    if (state.CurrentFrame.Count == 0)
+                    {
+                        queue.Enqueue(state, state.Score);
+                        break;
+                    }
                     for (int fi = 0; fi < state.CurrentFrame.Count; fi++)
                     {
                         var frame = state.CurrentFrame[fi];
