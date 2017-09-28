@@ -52,8 +52,10 @@ namespace Procon27Comp.Solvers
                 while (queue.Count > 0)
                 {
                     var state = queue.Dequeue();
-                    foreach (var frame in state.CurrentFrame)
+                    if (state.CurrentFrame.Count == 0) break;
+                    for (int fi = 0; fi < state.CurrentFrame.Count; fi++)
                     {
+                        var frame = state.CurrentFrame[fi];
                         var polygonf = frame.GetPolygon();
 
                         // わくの各頂点に対して全ピースはめちゃう
@@ -87,35 +89,40 @@ namespace Procon27Comp.Solvers
                                                     pv = reversedPiece[(i + k) % reversedPiece.Count];
                                                     nv = frameList[(j + k) % frameList.Count].Location;
                                                     k++;
-                                                } while (pv == nv);
+                                                } while (pv == nv && k <= Math.Min(reversedPiece.Count, frameList.Count));
                                                 if (--k > score) score = k;
                                             }
                                         }
 
                                         // 全埋め or 面積なくなったら返す
+                                        var newFrames = new List<Frame>(state.CurrentFrame);
+                                        newFrames.RemoveAt(fi);
+                                        newFrames.AddRange(merged.Select(p => new Frame(p.Select(q => new Numerics.Vector2((float)q.X, (float)q.Y)))));
                                         var nextState = new State(state.UnusedFlags & ((1UL << pi) ^ ulong.MaxValue))
                                         {
                                             Parent = state,
                                             Piece = nextp,
                                             Score = state.Score + score,
-                                            CurrentFrame = merged.Select(p => new Frame(p.Select(q => new Numerics.Vector2((float)q.X, (float)q.Y)))).ToList()
+                                            CurrentFrame = newFrames
                                         };
+
+                                        queue.Enqueue(nextState, nextState.Score);
 
                                         if (merged.Count == 0)
                                         {
-                                            ansdic.Add(f, nextState);
-                                            initf = nextState.UnusedFlags; // 未使用ピースを更新
                                             goto nextFrame;
                                         }
-
-                                        queue.Enqueue(nextState, nextState.Score);
                                     }
                                 }
                             }
                         }
+                        nextFrame:;
                     }
                 }
-                nextFrame:;
+
+                var result = queue.Dequeue();
+                ansdic.Add(f, result);
+                initf = result.UnusedFlags; // 未使用ピースを更新
             }
 
             // 埋まった
