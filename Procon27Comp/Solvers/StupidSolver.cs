@@ -33,6 +33,9 @@ namespace Procon27Comp.Solvers
             if (Solutions.Count > 0) return;
             var ansdic = new Dictionary<Frame, State>(Puzzle.Frames.Count);
 
+            double minLengthSquared = Puzzle.Pieces.SelectMany(p => p.Vertexes.GetNodes().Select(q => (q.GetNextValue().Location - q.Value.Location).LengthSquared())).Min();
+            double minAngle = Puzzle.Pieces.SelectMany(p => p.Vertexes).Select(p => p.Angle).Min();
+
             // 初期状態
             ulong initf = State.InitFlags(Puzzle.Pieces.Count);
 
@@ -97,9 +100,14 @@ namespace Procon27Comp.Solvers
                                         }
 
                                         // 全埋め or 面積なくなったら返す
+                                        var nextFrames = merged.Select(p => new Frame(p.Select(q => new Vector2((float)q.X, (float)q.Y))));
+
+                                        if (nextFrames.Any(p => p.Vertexes.Any(q => q.Angle < minAngle))) continue;
+                                        if (nextFrames.Any(p => p.Vertexes.GetNodes().Any(q => (q.GetNextValue().Location - q.Value.Location).LengthSquared() < minLengthSquared))) continue;
+
                                         var newFrames = new List<Frame>(state.CurrentFrame);
                                         newFrames.RemoveAt(fi);
-                                        newFrames.AddRange(merged.Select(p => new Frame(p.Select(q => new Vector2((float)q.X, (float)q.Y)))));
+                                        newFrames.AddRange(nextFrames);
                                         var nextState = new State(state.UnusedFlags & ((1UL << pi) ^ ulong.MaxValue))
                                         {
                                             Parent = state,
