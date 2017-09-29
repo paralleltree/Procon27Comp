@@ -80,9 +80,9 @@ namespace Procon27Comp.Solvers
 
                                         // 評価値算出
                                         int score = 0;
-                                        var reversedPiece = polygonp.Single().Select(p => new Numerics.Vector2((float)p.X, (float)p.Y)).ToList();
+                                        var pieceList = polygonp.Single().Select(p => new Numerics.Vector2((float)p.X, (float)p.Y)).ToList();
                                         var frameList = frame.Vertexes.ToList();
-                                        for (int i = 0; i < reversedPiece.Count; i++)
+                                        for (int i = 0; i < pieceList.Count; i++)
                                         {
                                             for (int j = 0; j < frameList.Count; j++)
                                             {
@@ -90,10 +90,10 @@ namespace Procon27Comp.Solvers
                                                 Numerics.Vector2 pv, nv;
                                                 do
                                                 {
-                                                    pv = reversedPiece[(i + k) % reversedPiece.Count];
+                                                    pv = pieceList[(i + k) % pieceList.Count];
                                                     nv = frameList[(j + k) % frameList.Count].Location;
                                                     k++;
-                                                } while (pv == nv && k <= Math.Min(reversedPiece.Count, frameList.Count));
+                                                } while (pv == nv && k <= Math.Min(pieceList.Count, frameList.Count));
                                                 if (--k > score) score = k;
                                             }
                                         }
