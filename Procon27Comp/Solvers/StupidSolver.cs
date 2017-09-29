@@ -5,9 +5,7 @@ using System.Text;
 using System.IO;
 
 using ConcurrentPriorityQueue;
-using Vertesaur;
-using Vertesaur.PolygonOperation;
-using Numerics = System.Numerics;
+using System.Numerics;
 using Procon27Comp.Components;
 using Procon27Comp.Internal;
 
@@ -73,21 +71,21 @@ namespace Procon27Comp.Solvers
                                     foreach (var nextp in GetNextPieces(piece, nodep, nodef))
                                     {
                                         var polygonp = nextp.GetPolygon();
-                                        var intersect = (Polygon2)PolygonCalculation.Intersect(polygonf, polygonp);
+                                        var intersect = PolygonCalculation.Intersect(polygonf, polygonp);
                                         if (Math.Abs(polygonp.GetArea()) - Math.Abs(intersect.GetArea()) > 1e-1) continue;
 
-                                        var merged = (Polygon2)PolygonCalculation.Difference(polygonf, polygonp);
+                                        var merged = PolygonCalculation.Difference(polygonf, polygonp);
 
                                         // 評価値算出
                                         int score = 0;
-                                        var pieceList = polygonp.Single().Select(p => new Numerics.Vector2((float)p.X, (float)p.Y)).ToList();
+                                        var pieceList = polygonp.Single().Select(p => new Vector2((float)p.X, (float)p.Y)).ToList();
                                         var frameList = frame.Vertexes.ToList();
                                         for (int i = 0; i < pieceList.Count; i++)
                                         {
                                             for (int j = 0; j < frameList.Count; j++)
                                             {
                                                 int k = 0;
-                                                Numerics.Vector2 pv, nv;
+                                                Vector2 pv, nv;
                                                 do
                                                 {
                                                     pv = pieceList[(i + k) % pieceList.Count];
@@ -101,7 +99,7 @@ namespace Procon27Comp.Solvers
                                         // 全埋め or 面積なくなったら返す
                                         var newFrames = new List<Frame>(state.CurrentFrame);
                                         newFrames.RemoveAt(fi);
-                                        newFrames.AddRange(merged.Select(p => new Frame(p.Select(q => new Numerics.Vector2((float)q.X, (float)q.Y)))));
+                                        newFrames.AddRange(merged.Select(p => new Frame(p.Select(q => new Vector2((float)q.X, (float)q.Y)))));
                                         var nextState = new State(state.UnusedFlags & ((1UL << pi) ^ ulong.MaxValue))
                                         {
                                             Parent = state,
@@ -136,11 +134,11 @@ namespace Procon27Comp.Solvers
         // ピースの頂点とわくの頂点をもらってわく頂点の左右の辺にくっつける位置でピースを返す
         IEnumerable<Piece> GetNextPieces(Piece piece, LinkedListNode<Vertex> piecen, LinkedListNode<Vertex> framen)
         {
-            Func<Numerics.Vector2, Numerics.Vector2, Piece> transform = (fvec, pvec) =>
+            Func<Vector2, Vector2, Piece> transform = (fvec, pvec) =>
             {
                 float angle = (float)VectorHelper.CalcAngle(fvec, pvec);
                 if (Math.Abs(angle % (Math.PI / 2)) > 1E-4) return null; // 90度以外はそもそも回転後に頂点が格子状にないので飛ばす
-                bool ispieceleft = Numerics.Vector3.Cross(new Numerics.Vector3(fvec, 0), new Numerics.Vector3(pvec, 0)).Z > 0;
+                bool ispieceleft = Vector3.Cross(new Vector3(fvec, 0), new Vector3(pvec, 0)).Z > 0;
                 var transformed = piece.Offset(-piecen.Value.X, -piecen.Value.Y).Rotate(ispieceleft ? -angle : angle).Offset(framen.Value.X, framen.Value.Y);
                 return transformed;
             };
@@ -170,17 +168,17 @@ namespace Procon27Comp.Solvers
 
     public static class PolygonCalculation
     {
-        public static IPlanarGeometry Difference(Polygon2 a, Polygon2 b)
+        public static Vertesaur.Polygon2 Difference(Vertesaur.Polygon2 a, Vertesaur.Polygon2 b)
         {
             return a.GetGpcPolygon().Clip(GpcWrapper.GpcOperation.Difference, b.GetGpcPolygon()).GetPolygon();
         }
 
-        public static IPlanarGeometry Intersect(Polygon2 a, Polygon2 b)
+        public static Vertesaur.Polygon2 Intersect(Vertesaur.Polygon2 a, Vertesaur.Polygon2 b)
         {
             return a.GetGpcPolygon().Clip(GpcWrapper.GpcOperation.Intersection, b.GetGpcPolygon()).GetPolygon();
         }
 
-        public static IPlanarGeometry Union(Polygon2 a, Polygon2 b)
+        public static Vertesaur.Polygon2 Union(Vertesaur.Polygon2 a, Vertesaur.Polygon2 b)
         {
             return a.GetGpcPolygon().Clip(GpcWrapper.GpcOperation.Union, b.GetGpcPolygon()).GetPolygon();
         }
