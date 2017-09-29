@@ -157,7 +157,7 @@ namespace Procon27Comp.Solvers
                 framen.GetNextValue().Location - framen.Value.Location,
                 piecen.GetNextValue().Location - piecen.Value.Location);
             if (prevItem != null) yield return prevItem;
-            if (nextItem != null) yield return nextItem;
+            if (nextItem != null && piecen.Value.Angle != framen.Value.Angle) yield return nextItem;
         }
 
         // 次のわくのターゲット頂点を返す(わく頂点の評価関数)
