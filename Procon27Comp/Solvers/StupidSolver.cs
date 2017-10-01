@@ -53,6 +53,20 @@ namespace Procon27Comp.Solvers
                 while (queue.Count > 0)
                 {
                     var state = queue.Dequeue();
+#if DEBUG
+                    using (var bmp = new Bitmap(1280, 720))
+                    {
+                        bmp.WorkWithGraphic(g =>
+                        {
+                            for (int i = 0; i < state.CurrentFrame.Count; i++)
+                            {
+                                g.DrawPolygon(Pens.Blue, state.CurrentFrame[i].Vertexes.Select(p => new PointF(p.X, p.Y)).ToArray());
+                            }
+                            if (state.Parent != null) g.DrawPolygon(Pens.DarkRed, state.Piece.Vertexes.Select(p => new PointF(p.X, p.Y)).ToArray());
+                        });
+                        bmp.SaveAsPng(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "prog.png"));
+                    }
+#endif
                     if (state.CurrentFrame.Count == 0)
                     {
                         queue.Enqueue(state, state.Score);
