@@ -22,6 +22,9 @@ namespace Procon27Comp.Solvers
         public Puzzle Puzzle { get; }
         public List<Solution> Solutions { get; }
 
+        private double minAngle = 0;
+        private double minLengthSquared = 0;
+
         public StupidSolver(Puzzle puzzle)
         {
             Puzzle = puzzle;
@@ -33,8 +36,8 @@ namespace Procon27Comp.Solvers
             if (Solutions.Count > 0) return;
             var ansdic = new Dictionary<Frame, State>(Puzzle.Frames.Count);
 
-            double minLengthSquared = Puzzle.Pieces.SelectMany(p => p.Vertexes.GetNodes().Select(q => (q.GetNextValue().Location - q.Value.Location).LengthSquared())).Min();
-            double minAngle = Puzzle.Pieces.SelectMany(p => p.Vertexes).Select(p => p.Angle).Min();
+            minLengthSquared = Puzzle.Pieces.SelectMany(p => p.Vertexes.GetNodes().Select(q => (q.GetNextValue().Location - q.Value.Location).LengthSquared())).Min();
+            minAngle = Puzzle.Pieces.SelectMany(p => p.Vertexes).Select(p => p.Angle).Min();
 
             // 初期状態
             ulong initf = State.InitFlags(Puzzle.Pieces.Count);
@@ -73,6 +76,7 @@ namespace Procon27Comp.Solvers
                         break;
                     }
 
+                    foreach (var nextState in ExpandNodes(state)) queue.Enqueue(nextState, nextState.Score);
                 }
 
                 var result = queue.Dequeue();
@@ -82,6 +86,79 @@ namespace Procon27Comp.Solvers
 
             // 埋まった
             Solutions.Add(new Solution(Puzzle, ansdic));
+        }
+
+        private IEnumerable<State> ExpandNodes(State state)
+        {
+            for (int fi = 0; fi < state.CurrentFrame.Count; fi++)
+            {
+                var frame = state.CurrentFrame[fi];
+                var polygonf = frame.GetPolygon();
+
+                // わくの各頂点に対して全ピースはめちゃう
+                foreach (var nodef in frame.Vertexes.GetNodes())
+                {
+                    foreach (int pi in state.EnumerateUnusedPieceIndices())
+                    {
+                        var piece = Puzzle.Pieces[pi];
+                        foreach (var nodep in piece.Vertexes.GetNodes())
+                        {
+                            foreach (var nextp in GetNextPieces(piece, nodep, nodef))
+                            {
+                                var polygonp = nextp.GetPolygon();
+                                var intersect = PolygonCalculation.Intersect(polygonf, polygonp);
+                                if (Math.Abs(polygonp.GetArea()) - Math.Abs(intersect.GetArea()) > 1e-1) continue;
+
+                                var merged = PolygonCalculation.Difference(polygonf, polygonp);
+
+                                // 評価値算出
+                                int score = 0;
+                                var pieceList = polygonp.Single().Select(p => new Vector2((float)p.X, (float)p.Y)).ToList();
+                                var frameList = frame.Vertexes.ToList();
+                                for (int i = 0; i < pieceList.Count; i++)
+                                {
+                                    for (int j = 0; j < frameList.Count; j++)
+                                    {
+                                        int k = 0;
+                                        Vector2 pv, nv;
+                                        do
+                                        {
+                                            pv = pieceList[(i + k) % pieceList.Count];
+                                            nv = frameList[(j + k) % frameList.Count].Location;
+                                            k++;
+                                        } while (pv == nv && k <= Math.Min(pieceList.Count, frameList.Count));
+                                        if (--k > score) score = k;
+                                    }
+                                }
+
+                                var nextFrames = merged.Select(p => new Frame(p.Select(q => new Vector2((float)q.X, (float)q.Y))));
+
+                                if (nextFrames.Any(p => p.Vertexes.Any(q => q.Angle < minAngle))) continue;
+                                if (nextFrames.Any(p => p.Vertexes.GetNodes().Any(q => (q.GetNextValue().Location - q.Value.Location).LengthSquared() < minLengthSquared))) continue;
+
+                                var newFrames = new List<Frame>(state.CurrentFrame);
+                                newFrames.RemoveAt(fi);
+                                newFrames.AddRange(nextFrames);
+                                var nextState = new State(state.UnusedFlags & ((1UL << pi) ^ ulong.MaxValue))
+                                {
+                                    Parent = state,
+                                    Piece = nextp,
+                                    Score = state.Score + score,
+                                    CurrentFrame = newFrames
+                                };
+
+                                yield return nextState;
+
+                                if (merged.Count == 0)
+                                {
+                                    goto nextFrame;
+                                }
+                            }
+                        }
+                    }
+                }
+                nextFrame:;
+            }
         }
 
         // ピースの頂点とわくの頂点をもらってわく頂点の左右の辺にくっつける位置でピースを返す
