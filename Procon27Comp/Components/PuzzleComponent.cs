@@ -51,5 +51,10 @@ namespace Procon27Comp.Components
             double angle = VectorHelper.CalcAngle(-pv, nv);
             return VectorHelper.IsConcaveVertex(pv, nv) ? 2 * Math.PI - angle : angle;
         }
+
+        public virtual string GetTextData()
+        {
+            return string.Format("{0} {1}", Vertexes.Count, string.Join(" ", Vertexes.Select(p => string.Format("{0} {1}", p.X / 10, p.Y / 10))));
+        }
     }
 }

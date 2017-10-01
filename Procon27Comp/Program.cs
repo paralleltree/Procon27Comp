@@ -71,9 +71,11 @@ namespace Procon27Comp
             }
             else
             {
-                string outputPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "out.png");
-                result.DumpToImage(outputPath);
-                System.Diagnostics.Process.Start(outputPath);
+                string outputDir = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+                string imagePath = Path.Combine(outputDir, "out.png");
+                result.DumpToImage(imagePath);
+                result.DumpToText(Path.Combine(outputDir, "out.txt"));
+                System.Diagnostics.Process.Start(imagePath);
             }
 
             Console.WriteLine("Done! ({0})", DateTime.Now - started);
