@@ -46,48 +46,54 @@ namespace Procon27Comp.Solvers
             var forder = Puzzle.Frames;
             foreach (var f in forder.OrderBy(p => Math.Abs(p.GetPolygon().GetArea())))
             {
-                var queue = new ConcurrentPriorityQueue<State, int>();
+                var queues = new ConcurrentPriorityQueue<State, int>[Puzzle.Pieces.Count + 1];
+                for (int i = 0; i < queues.Length; i++) queues[i] = new ConcurrentPriorityQueue<State, int>();
+
                 var first = new State(initf)
                 {
                     CurrentFrame = new List<Frame>() { f }
                 };
-                queue.Enqueue(first, 0);
+                queues[0].Enqueue(first, 0);
 
-                while (queue.Count > 0)
+                int width = 1;
+                while (true)
                 {
-                    if (queue.Peek().CurrentFrame.Count == 0) break;
-
-                    var nextQueue = new ConcurrentPriorityQueue<State, int>();
-                    int width = 10;
-                    for (int k = 0; k < width; k++)
+                    for (int t = 0; t <= Puzzle.Pieces.Count; t++)
                     {
-                        if (queue.Count == 0) break;
-                        var state = queue.Dequeue();
-#if DEBUG
-                        using (var bmp = new Bitmap(1280, 720))
+                        for (int k = 0; k < width; k++)
                         {
-                            bmp.WorkWithGraphic(g =>
+                            if (queues[t].Count == 0) break;
+                            var state = queues[t].Dequeue();
+
+#if DEBUG
+                            using (var bmp = new Bitmap(1280, 720))
                             {
-                                for (int i = 0; i < state.CurrentFrame.Count; i++)
+                                bmp.WorkWithGraphic(g =>
                                 {
-                                    g.DrawPolygon(Pens.Blue, state.CurrentFrame[i].Vertexes.Select(p => new PointF(p.X, p.Y)).ToArray());
-                                }
-                                if (state.Parent != null) g.DrawPolygon(Pens.DarkRed, state.Piece.Vertexes.Select(p => new PointF(p.X, p.Y)).ToArray());
-                            });
-                            bmp.SaveAsPng(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "prog.png"));
-                        }
+                                    for (int i = 0; i < state.CurrentFrame.Count; i++)
+                                    {
+                                        g.DrawPolygon(Pens.Blue, state.CurrentFrame[i].Vertexes.Select(p => new PointF(p.X, p.Y)).ToArray());
+                                    }
+                                    if (state.Parent != null) g.DrawPolygon(Pens.DarkRed, state.Piece.Vertexes.Select(p => new PointF(p.X, p.Y)).ToArray());
+                                });
+                                bmp.SaveAsPng(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "prog.png"));
+                            }
 #endif
 
-                        foreach (var nextState in ExpandNodes(state))
-                            nextQueue.Enqueue(nextState, nextState.Score);
-                    }
-                    queue = nextQueue;
-                }
+                            if (state.CurrentFrame.Count == 0)
+                            {
+                                ansdic.Add(f, state);
+                                initf = state.UnusedFlags; // 未使用ピースを更新
+                                goto nextLoop;
+                            }
 
-                if (queue.Count == 0) return; // 失敗
-                var result = queue.Dequeue();
-                ansdic.Add(f, result);
-                initf = result.UnusedFlags; // 未使用ピースを更新
+                            foreach (var nextState in ExpandNodes(state))
+                                queues[t + 1].Enqueue(nextState, nextState.Score);
+                        }
+                    }
+                    width++;
+                }
+                nextLoop:;
             }
 
             // 埋まった
