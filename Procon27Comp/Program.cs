@@ -21,8 +21,8 @@ namespace Procon27Comp
             Puzzle reduced = puzzle;
             for (int j = 0; j < 3; j++)
             {
+                for (int i = 0; i < 4; i++) reduced = reduced.ReduceByEdge(3);
                 for (int i = 0; i < 4; i++) reduced = reduced.ReduceByEdge(2);
-                for (int i = 0; i < 2; i++) reduced = reduced.ReduceByEdge(1);
             }
 
             Console.WriteLine("Pieces count: {0} -> {1}", puzzle.Pieces.Count, reduced.Pieces.Count);
