@@ -16,6 +16,7 @@ namespace Procon27Comp
         {
             var puzzle = Puzzle.ReadFromData(File.ReadAllText(args[0]).Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries));
 
+            DateTime started = DateTime.Now;
 
 #if DEBUG
             Console.WriteLine("Preprocessing...");
@@ -74,7 +75,8 @@ namespace Procon27Comp
                 result.DumpToImage(outputPath);
                 System.Diagnostics.Process.Start(outputPath);
             }
-            Console.WriteLine("Done!");
+
+            Console.WriteLine("Done! ({0})", DateTime.Now - started);
         }
     }
 }
