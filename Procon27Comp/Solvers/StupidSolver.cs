@@ -62,6 +62,9 @@ namespace Procon27Comp.Solvers
                     {
                         for (int k = 0; k < width; k++)
                         {
+#if DEBUG
+                            Console.WriteLine(queues[t].Count);
+#endif
                             if (queues[t].Count == 0) break;
                             var state = queues[t].Dequeue();
 
