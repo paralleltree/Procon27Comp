@@ -54,6 +54,11 @@ namespace Procon27Comp
             reduced.Add(reduce(puzzle, 3));
             reduced.Add(reduce(puzzle, 2));
 
+            write_file(reduced[0], "prep3.txt");
+            write_file(reduced[1], "prep2.txt");
+
+            /*
+
             var tasks = reduced.Select(p => Task.Run(() =>
             {
                 var solver = new StupidSolver(p);
@@ -63,8 +68,9 @@ namespace Procon27Comp
 
             // 探索を打ち切ってnullを返す場合は使えないので実装変えてね☆
             Solution result = tasks[Task.WaitAny(tasks)].Result;
+            */
 #endif
-
+            /*
             if (result == null)
             {
                 Console.WriteLine("Solution not found ('>_<)...");
@@ -77,6 +83,32 @@ namespace Procon27Comp
             }
 
             Console.WriteLine("Done! ({0})", DateTime.Now - started);
+            */
+        }
+
+        static void write_file(Puzzle reduced, String file_name)
+        {
+
+            using (StreamWriter w = new StreamWriter(file_name))
+            {
+                w.WriteLine("{0}", reduced.Pieces.Count());
+                foreach (Piece piece in reduced.Pieces)
+                {
+                    w.Write("{0}", piece.Vertexes.Count());
+                    foreach (Vertex pv in piece.Vertexes)
+                    {
+                        w.Write(" {0} {1}", pv.X / 10, pv.Y / 10);
+                    }
+                    w.Write("\n");
+                }
+                w.Write("{0}", reduced.Frames[0].Vertexes.Count());
+                foreach (Vertex pv in reduced.Frames[0].Vertexes)
+                {
+                    w.Write(" {0} {1}", pv.X / 10, pv.Y / 10);
+                }
+                w.Write("\n");
+            }
+
         }
     }
 }
