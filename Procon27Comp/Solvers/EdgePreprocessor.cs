@@ -33,7 +33,7 @@ namespace Procon27Comp.Solvers
                 for (int j = 0; j < plist.Count; j++)
                 {
                     if (used[j] || i == j) continue;
-                    var merged = Merge(plist[i], plist[j], edgeCount).ToList();
+                    var merged = Enumerable.Range(0, 4).SelectMany(p => Merge(plist[i], plist[j].Rotate(p * 90 * (float)Math.PI / 180), edgeCount)).ToList();
                     if (merged.Count > 0 && (merged.Count == 1 || merged.Skip(1).All(p => p.GetPolygon().SpatiallyEqual(merged[0].GetPolygon()))))
                     {
                         mergedPieces.Add(merged.First());
