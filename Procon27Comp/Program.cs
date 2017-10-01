@@ -77,6 +77,8 @@ namespace Procon27Comp
             }
 
             Console.WriteLine("Done! ({0})", DateTime.Now - started);
+            Console.WriteLine("何か押してね (/>_<)/");
+            Console.ReadKey();
         }
     }
 }
