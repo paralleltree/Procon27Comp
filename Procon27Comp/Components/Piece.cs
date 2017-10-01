@@ -42,11 +42,6 @@ namespace Procon27Comp.Components
         {
             return new Piece(Vertexes.Select(p => p.Location.Rotate(rad)));
         }
-
-        public virtual void DrawToImage(System.Drawing.Graphics g, System.Drawing.Pen pen)
-        {
-            this.GetPolygon().DrawToImage(g, pen);
-        }
     }
 
     /// <summary>

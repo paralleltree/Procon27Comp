@@ -36,7 +36,7 @@ namespace Procon27Comp
                     // 枠描画
                     foreach (var frame in Puzzle.Frames)
                     {
-                        frame.GetPolygon().DrawToImage(g, new Pen(Color.Green));
+                        frame.DrawToImage(g, new Pen(Color.Green));
                     }
 
                     // ピース描画
