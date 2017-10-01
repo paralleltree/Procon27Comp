@@ -16,6 +16,8 @@ namespace Procon27Comp
         {
             var puzzle = Puzzle.ReadFromData(File.ReadAllText(args[0]).Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries));
 
+
+#if DEBUG
             Console.WriteLine("Preprocessing...");
 
             Puzzle reduced = puzzle;
@@ -31,15 +33,45 @@ namespace Procon27Comp
             var solver = new StupidSolver(reduced);
             solver.Solve();
 
-            if (solver.Solutions.Count == 0)
+            Solution result = solver.Solutions.Count == 0 ? null : solver.Solutions.Single();
+
+#else
+
+            Func<Puzzle, int, Puzzle> reduce = (p, min) =>
+            {
+                for (int k = 0; k < 2; k++)
+                {
+                    for (int j = 3; j >= min; j--)
+                    {
+                        for (int i = 0; i < 3; i++) p = p.ReduceByEdge(j);
+                    }
+                }
+                return p;
+            };
+
+            var reduced = new List<Puzzle>();
+            reduced.Add(reduce(puzzle, 3));
+            reduced.Add(reduce(puzzle, 2));
+
+            var tasks = reduced.Select(p => Task.Run(() =>
+            {
+                var solver = new StupidSolver(p);
+                solver.Solve();
+                return solver.Solutions.FirstOrDefault();
+            })).ToArray();
+
+            // 探索を打ち切ってnullを返す場合は使えないので実装変えてね☆
+            Solution result = tasks[Task.WaitAny(tasks)].Result;
+#endif
+
+            if (result == null)
             {
                 Console.WriteLine("Solution not found ('>_<)...");
             }
             else
             {
-                var solution = solver.Solutions.Single();
                 string outputPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "out.png");
-                solution.DumpToImage(outputPath);
+                result.DumpToImage(outputPath);
                 System.Diagnostics.Process.Start(outputPath);
             }
             Console.WriteLine("Done!");
