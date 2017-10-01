@@ -84,6 +84,7 @@ namespace Procon27Comp.Solvers
                     queue = nextQueue;
                 }
 
+                if (queue.Count == 0) return; // 失敗
                 var result = queue.Dequeue();
                 ansdic.Add(f, result);
                 initf = result.UnusedFlags; // 未使用ピースを更新

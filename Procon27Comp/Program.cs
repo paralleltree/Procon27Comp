@@ -31,10 +31,17 @@ namespace Procon27Comp
             var solver = new StupidSolver(reduced);
             solver.Solve();
 
-            var solution = solver.Solutions.Single();
-            string outputPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "out.png");
-            solution.DumpToImage(outputPath);
-            System.Diagnostics.Process.Start(outputPath);
+            if (solver.Solutions.Count == 0)
+            {
+                Console.WriteLine("Solution not found ('>_<)...");
+            }
+            else
+            {
+                var solution = solver.Solutions.Single();
+                string outputPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "out.png");
+                solution.DumpToImage(outputPath);
+                System.Diagnostics.Process.Start(outputPath);
+            }
             Console.WriteLine("Done!");
         }
     }
