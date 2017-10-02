@@ -62,7 +62,8 @@ namespace Procon27Comp
             })).ToArray();
 
             // 探索を打ち切ってnullを返す場合は使えないので実装変えてね☆
-            Solution result = tasks[Task.WaitAny(tasks)].Result;
+            int completedIndex = Task.WaitAny(tasks, 1000 * 60 * 7);
+            Solution result = completedIndex == -1 ? null : tasks[completedIndex].Result;
 #endif
 
             if (result == null)
