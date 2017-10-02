@@ -42,10 +42,13 @@ namespace Procon27Comp.Solvers
                 }
 
                 if (mergedPieces.Count == 0) continue;
-                var mergedpoly = mergedPieces.Select(p => p.GetPolygon());
-                var union = mergedpoly.Aggregate((p, q) => (Polygon2)PolygonCalculation.Union(p, q));
-                if (union.GetArea() == mergedpoly.Sum(p => p.GetArea()))
+                var mergedpoly = mergedPieces.Select(p => p.GetPolygon()).ToList();
+                var intersects = mergedpoly.SelectMany((p, q) => mergedpoly.Skip(q + 1).Select(r => PolygonCalculation.Intersect(p, r)));
+
+                var piecepoly = plist[i].GetPolygon();
+                if (intersects.All(p => p.SpatiallyEqual(piecepoly)))
                 {
+                    var union = mergedpoly.Aggregate((p, q) => PolygonCalculation.Union(p, q));
                     plist[i] = new MergedPiece(union.First().Select(p => new Numerics.Vector2((float)p.X, (float)p.Y)), mergedPieces.SelectMany(p => p.ComponentPieces).Distinct());
                     for (int j = 0; j < plist.Count; j++)
                     {
