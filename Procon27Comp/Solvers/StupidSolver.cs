@@ -131,7 +131,7 @@ namespace Procon27Comp.Solvers
                                 // 評価値算出
                                 int score = 0;
                                 var pieceList = polygonp.Single().Select(p => new Vector2((float)p.X, (float)p.Y)).ToList();
-                                var frameList = frame.Vertexes.ToList();
+                                var frameList = frame.Vertexes.Select(p => p.Location).ToList();
                                 for (int i = 0; i < pieceList.Count; i++)
                                 {
                                     for (int j = 0; j < frameList.Count; j++)
@@ -141,10 +141,23 @@ namespace Procon27Comp.Solvers
                                         do
                                         {
                                             pv = pieceList[(i + k) % pieceList.Count];
-                                            nv = frameList[(j + k) % frameList.Count].Location;
+                                            nv = frameList[(j + k) % frameList.Count];
                                             k++;
                                         } while (pv == nv && k <= Math.Min(pieceList.Count, frameList.Count));
-                                        if (--k > score) score = k;
+                                        int localScore = --k;
+                                        if (localScore == 0) continue;
+                                        localScore *= 2;
+                                        // 前側の辺の方向が一致しているか
+                                        if (Vector3.Cross(
+                                            new Vector3(pieceList[(i + pieceList.Count - 1) % pieceList.Count] - pieceList[i], 0),
+                                            new Vector3(frameList[(j + frameList.Count - 1) % frameList.Count] - frameList[j], 0)
+                                            ).Z == 0) localScore += 1;
+                                        //後側の辺の方向が一致しているか
+                                        if (Vector3.Cross(
+                                            new Vector3(pieceList[(i + k) % pieceList.Count] - pieceList[(i + k - 1) % pieceList.Count], 0),
+                                            new Vector3(frameList[(j + k) % frameList.Count] - frameList[(j + k - 1) % frameList.Count], 0)
+                                            ).Z == 0) localScore += 1;
+                                        if (localScore > score) score = localScore;
                                     }
                                 }
 
