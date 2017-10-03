@@ -36,7 +36,7 @@ namespace Procon27Comp
                     // 枠描画
                     foreach (var frame in Puzzle.Frames)
                     {
-                        frame.GetPolygon().DrawToImage(g, new Pen(Color.Green));
+                        frame.DrawToImage(g, new Pen(Color.Green));
                     }
 
                     // ピース描画
@@ -55,6 +55,28 @@ namespace Procon27Comp
 
                 canvas.SaveAsPng(path);
             }
+        }
+
+        public void DumpToText(string path)
+        {
+            var pieces = Results.SelectMany(p =>
+            {
+                State state = p.Value;
+                if (state == null) return Enumerable.Empty<string>();
+                var list = new List<string>();
+                while (state.Parent != null)
+                {
+                    list.Add(state.Piece.GetTextData());
+                    state = state.Parent;
+                }
+                return list;
+            }).ToArray();
+
+            string piecesData = string.Join(":", pieces);
+            int piecesCount = piecesData.Length - piecesData.Replace(":", "").Length + 1;
+
+            string result = (piecesCount) + ":" + piecesData + ":" + Puzzle.Frames.Single().GetTextData();
+            System.IO.File.WriteAllText(path, result);
         }
     }
 }

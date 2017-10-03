@@ -5,6 +5,8 @@ using System.Linq;
 using System.Drawing;
 using System.Drawing.Imaging;
 
+using Procon27Comp.Components;
+
 namespace Procon27Comp.Internal
 {
     public static class GraphicsHelper
@@ -31,6 +33,24 @@ namespace Procon27Comp.Internal
             }
             catch
             {
+            }
+        }
+
+        public static void DumpToImage(this Puzzle puzzle, string path)
+        {
+            using (var bmp = new Bitmap(1200, 800))
+            {
+                WorkWithGraphic(bmp, g =>
+                {
+                    puzzle.Pieces.Select((p, i) => new { Index = i, Piece = p }).ToList()
+                    .ForEach(p =>
+                    {
+                        p.Piece.GetPolygon().DrawToImage(g, Pens.Blue);
+                        var centroid = p.Piece.GetPolygon().GetCentroid();
+                        g.DrawString(p.Index.ToString(), new Font("MS Gothic", 10), Brushes.Brown, new PointF((float)centroid.X, (float)centroid.Y));
+                    });
+                });
+                bmp.SaveAsPng(path);
             }
         }
     }

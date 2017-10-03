@@ -24,6 +24,7 @@ namespace Procon27Comp.Solvers
 
         private double minAngle = 0;
         private double minLengthSquared = 0;
+        private double minArea = 0;
 
         public StupidSolver(Puzzle puzzle)
         {
@@ -38,6 +39,7 @@ namespace Procon27Comp.Solvers
 
             minLengthSquared = Puzzle.Pieces.SelectMany(p => p.Vertexes.GetNodes().Select(q => (q.GetNextValue().Location - q.Value.Location).LengthSquared())).Min();
             minAngle = Puzzle.Pieces.SelectMany(p => p.Vertexes).Select(p => p.Angle).Min();
+            minArea = Puzzle.Pieces.Min(p => p.GetPolygon().GetArea());
 
             // 初期状態
             ulong initf = State.InitFlags(Puzzle.Pieces.Count);
@@ -150,6 +152,7 @@ namespace Procon27Comp.Solvers
 
                                 if (nextFrames.Any(p => p.Vertexes.Any(q => q.Angle < minAngle))) continue;
                                 if (nextFrames.Any(p => p.Vertexes.GetNodes().Any(q => (q.GetNextValue().Location - q.Value.Location).LengthSquared() < minLengthSquared))) continue;
+                                if (nextFrames.Any(p => p.GetPolygon().GetArea() < minArea)) continue;
 
                                 var newFrames = new List<Frame>(state.CurrentFrame);
                                 newFrames.RemoveAt(fi);

@@ -42,11 +42,6 @@ namespace Procon27Comp.Components
         {
             return new Piece(Vertexes.Select(p => p.Location.Rotate(rad)));
         }
-
-        public virtual void DrawToImage(System.Drawing.Graphics g, System.Drawing.Pen pen)
-        {
-            this.GetPolygon().DrawToImage(g, pen);
-        }
     }
 
     /// <summary>
@@ -75,6 +70,12 @@ namespace Procon27Comp.Components
         {
             foreach (Piece item in ComponentPieces)
                 item.DrawToImage(g, pen);
+        }
+
+        public override string GetTextData()
+        {
+            var pieces = ComponentPieces.Select(p => string.Format("{0} {1}", p.Vertexes.Count, string.Join(" ", p.Vertexes.Select(q => string.Format("{0} {1}", q.X / 10, q.Y / 10)))));
+            return string.Join(":", pieces.ToArray());
         }
     }
 }
