@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.IO;
 
 using Procon27Comp.Components;
+using Procon27Comp.Internal;
 using Procon27Comp.Solvers;
 
 namespace Procon27Comp
@@ -29,6 +30,8 @@ namespace Procon27Comp
             }
 
             Console.WriteLine("Pieces count: {0} -> {1}", puzzle.Pieces.Count, reduced.Pieces.Count);
+            reduced.DumpToImage(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "reduced.png"));
+
             Console.WriteLine("Solving...");
 
             var solver = new StupidSolver(reduced);
