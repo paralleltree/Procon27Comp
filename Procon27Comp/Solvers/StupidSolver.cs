@@ -22,6 +22,8 @@ namespace Procon27Comp.Solvers
         public Puzzle Puzzle { get; }
         public List<Solution> Solutions { get; }
 
+        private System.Threading.CancellationToken CancellationToken { get; }
+
         private double minAngle = 0;
         private double minLengthSquared = 0;
         private double minArea = 0;
@@ -30,6 +32,11 @@ namespace Procon27Comp.Solvers
         {
             Puzzle = puzzle;
             Solutions = new List<Solution>();
+        }
+
+        public StupidSolver(Puzzle puzzle, System.Threading.CancellationToken cancellationToken) : this(puzzle)
+        {
+            CancellationToken = cancellationToken;
         }
 
         public void Solve()
@@ -64,6 +71,8 @@ namespace Procon27Comp.Solvers
                     {
                         for (int k = 0; k < width; k++)
                         {
+                            CancellationToken.ThrowIfCancellationRequested();
+
 #if DEBUG
                             Console.WriteLine(queues[t].Count);
 #endif

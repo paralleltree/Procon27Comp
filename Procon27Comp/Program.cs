@@ -57,9 +57,10 @@ namespace Procon27Comp
             list.Add(reduce(puzzle, 3));
             list.Add(reduce(puzzle, 2));
 
+            var tokenSource = new System.Threading.CancellationTokenSource();
             var tasks = list.Select(p => Task.Run(() =>
             {
-                var solver = new StupidSolver(p);
+                var solver = new StupidSolver(p, tokenSource.Token);
                 solver.Solve();
                 return solver.Solutions.FirstOrDefault();
             })).ToArray();
@@ -67,6 +68,7 @@ namespace Procon27Comp
             // 探索を打ち切ってnullを返す場合は使えないので実装変えてね☆
             int completedIndex = Task.WaitAny(tasks, 1000 * 60 * 7);
             Solution result = completedIndex == -1 ? null : tasks[completedIndex].Result;
+            tokenSource.Cancel();
 #endif
 
             if (result == null)
