@@ -21,8 +21,7 @@ namespace Procon27Comp.WatchAndLaunch
             };
             watcher.Changed += (s, e) => System.Diagnostics.Process.Start(launchTarget, monitorTarget);
             watcher.EnableRaisingEvents = true;
-
-            Console.ReadKey();
+            watcher.WaitForChanged(WatcherChangeTypes.Changed);
         }
     }
 }
