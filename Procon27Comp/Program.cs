@@ -53,11 +53,11 @@ namespace Procon27Comp
                 return p;
             };
 
-            var reduced = new List<Puzzle>();
-            reduced.Add(reduce(puzzle, 3));
-            reduced.Add(reduce(puzzle, 2));
+            var list = new List<Puzzle>();
+            list.Add(reduce(puzzle, 3));
+            list.Add(reduce(puzzle, 2));
 
-            var tasks = reduced.Select(p => Task.Run(() =>
+            var tasks = list.Select(p => Task.Run(() =>
             {
                 var solver = new StupidSolver(p);
                 solver.Solve();
