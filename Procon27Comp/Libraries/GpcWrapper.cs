@@ -313,10 +313,10 @@ namespace GpcWrapper
                     gpc_vtx.x = polygon.Contour[i].Vertex[j].X;
                     gpc_vtx.y = polygon.Contour[i].Vertex[j].Y;
                     Marshal.StructureToPtr(gpc_vtx, ptr2, false);
-                    ptr2 = (IntPtr)(((int)ptr2) + Marshal.SizeOf(gpc_vtx));
+                    ptr2 = (IntPtr)(((long)ptr2) + Marshal.SizeOf(gpc_vtx));
                 }
                 Marshal.StructureToPtr(gpc_vtx_list, ptr, false);
-                ptr = (IntPtr)(((int)ptr) + Marshal.SizeOf(gpc_vtx_list));
+                ptr = (IntPtr)(((long)ptr) + Marshal.SizeOf(gpc_vtx_list));
             }
 
             return gpc_pol;
@@ -352,9 +352,9 @@ namespace GpcWrapper
                     polygon.Contour[i].Vertex[j].X = gpc_vtx.x;
                     polygon.Contour[i].Vertex[j].Y = gpc_vtx.y;
 
-                    ptr2 = (IntPtr)(((int)ptr2) + Marshal.SizeOf(gpc_vtx));
+                    ptr2 = (IntPtr)(((long)ptr2) + Marshal.SizeOf(gpc_vtx));
                 }
-                ptr = (IntPtr)(((int)ptr) + Marshal.SizeOf(gpc_vtx_list));
+                ptr = (IntPtr)(((long)ptr) + Marshal.SizeOf(gpc_vtx_list));
             }
 
             return polygon;
@@ -380,9 +380,9 @@ namespace GpcWrapper
                     tristrip.Strip[i].Vertex[j].X = gpc_vtx.x;
                     tristrip.Strip[i].Vertex[j].Y = gpc_vtx.y;
 
-                    ptr2 = (IntPtr)(((int)ptr2) + Marshal.SizeOf(gpc_vtx));
+                    ptr2 = (IntPtr)(((long)ptr2) + Marshal.SizeOf(gpc_vtx));
                 }
-                ptr = (IntPtr)(((int)ptr) + Marshal.SizeOf(gpc_vtx_list));
+                ptr = (IntPtr)(((long)ptr) + Marshal.SizeOf(gpc_vtx_list));
             }
 
             return tristrip;
@@ -396,7 +396,7 @@ namespace GpcWrapper
             {
                 gpc_vertex_list gpc_vtx_list = (gpc_vertex_list)Marshal.PtrToStructure(ptr, typeof(gpc_vertex_list));
                 Marshal.FreeCoTaskMem(gpc_vtx_list.vertex);
-                ptr = (IntPtr)(((int)ptr) + Marshal.SizeOf(gpc_vtx_list));
+                ptr = (IntPtr)(((long)ptr) + Marshal.SizeOf(gpc_vtx_list));
             }
             Marshal.FreeCoTaskMem(gpc_pol.contour);
         }
