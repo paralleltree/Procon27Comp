@@ -11,7 +11,7 @@ namespace Procon27Comp.WatchAndLaunch
     {
         static void Main(string[] args)
         {
-            string monitorTarget = args[0];
+            string monitorTarget = Path.GetFullPath(args[0]);
             string launchTarget = args[1];
 
             var watcher = new FileSystemWatcher()
