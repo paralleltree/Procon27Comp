@@ -15,7 +15,8 @@ namespace Procon27Comp
     {
         static void Main(string[] args)
         {
-            var puzzle = Puzzle.ReadFromData(File.ReadAllText(args[0]).Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries));
+            var opts = new Options(args);
+            var puzzle = Puzzle.ReadFromData(File.ReadAllText(opts.RemainingArgs[0]).Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries));
 
             DateTime started = DateTime.Now;
 
@@ -83,7 +84,48 @@ namespace Procon27Comp
 
             Console.WriteLine("Done! ({0})", DateTime.Now - started);
             Console.WriteLine("何か押してね (/>_<)/");
-            Console.ReadKey();
+            if (!opts.IsBatchMode) Console.ReadKey();
+        }
+    }
+
+    /// <summary>
+    /// 実行時のコマンドライン引数により指定されるオプションを表します。
+    /// </summary>
+    class Options
+    {
+        /// <summary>
+        /// コマンドライン引数を解析した結果残った引数を取得します。
+        /// </summary>
+        public string[] RemainingArgs { get; private set; }
+
+        /// <summary>
+        /// バッチモードで起動されているかどうかを取得します。
+        /// </summary>
+        public bool IsBatchMode { get; private set; }
+
+        /// <summary>
+        /// コマンドライン引数を解析してオプションを設定します。
+        /// </summary>
+        /// <param name="args">コマンドライン引数</param>
+        public Options(string[] args)
+        {
+            RemainingArgs = args.TakeWhile(p => p != "--").Where((p, i) =>
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(p, "(?<=^-)[a-z]$");
+                if (!match.Success) return true;
+
+                bool isOption = true;
+                switch (match.Value)
+                {
+                    case "b":
+                        IsBatchMode = true;
+                        break;
+                    default:
+                        isOption = false;
+                        break;
+                }
+                return !isOption;
+            }).Concat(args.SkipWhile(p => p != "--").Skip(1)).ToArray();
         }
     }
 }
