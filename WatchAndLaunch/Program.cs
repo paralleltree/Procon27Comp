@@ -12,14 +12,15 @@ namespace Procon27Comp.WatchAndLaunch
         static void Main(string[] args)
         {
             string monitorTarget = Path.GetFullPath(args[0]);
-            string launchTarget = args[1];
+            string launchTarget = string.Format("\"{0}\"", args.Skip(1).First());
+            string launchArgs = string.Join(" ", args.Skip(2).Select(p => "\"" + p + "\"").ToArray());
 
             var watcher = new FileSystemWatcher()
             {
                 Path = Path.GetDirectoryName(monitorTarget),
                 Filter = Path.GetFileName(monitorTarget)
             };
-            watcher.Changed += (s, e) => System.Diagnostics.Process.Start(launchTarget, monitorTarget);
+            watcher.Changed += (s, e) => System.Diagnostics.Process.Start(launchTarget, string.Format("{0} {1}", launchArgs, string.Format("\"{0}\"", monitorTarget)));
             watcher.EnableRaisingEvents = true;
             watcher.WaitForChanged(WatcherChangeTypes.Changed);
         }
