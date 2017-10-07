@@ -20,6 +20,7 @@ namespace Procon27Comp.Solvers
     {
         private Size picSize = new Size(1280, 720);
         public Puzzle Puzzle { get; }
+        private List<Piece> FlippedPieces { get; }
         public List<Solution> Solutions { get; }
 
         private System.Threading.CancellationToken CancellationToken { get; }
@@ -31,6 +32,7 @@ namespace Procon27Comp.Solvers
         public StupidSolver(Puzzle puzzle)
         {
             Puzzle = puzzle;
+            FlippedPieces = puzzle.Pieces.Select(p => p.Flip()).ToList();
             Solutions = new List<Solution>();
         }
 
@@ -64,7 +66,7 @@ namespace Procon27Comp.Solvers
                 };
                 queues[0].Enqueue(first, 0);
 
-                int width = 1;
+                int width = 5;
                 while (true)
                 {
                     for (int t = 0; t <= Puzzle.Pieces.Count; t++)
@@ -126,59 +128,61 @@ namespace Procon27Comp.Solvers
                 {
                     foreach (int pi in state.EnumerateUnusedPieceIndices())
                     {
-                        var piece = Puzzle.Pieces[pi];
-                        foreach (var nodep in piece.Vertexes.GetNodes())
+                        foreach (var piece in new Piece[] { Puzzle.Pieces[pi], FlippedPieces[pi] })
                         {
-                            foreach (var nextp in GetNextPieces(piece, nodep, nodef))
+                            foreach (var nodep in piece.Vertexes.GetNodes())
                             {
-                                var polygonp = nextp.GetPolygon();
-                                var intersect = PolygonCalculation.Intersect(polygonf, polygonp);
-                                if (Math.Abs(polygonp.GetArea()) - Math.Abs(intersect.GetArea()) > 1e-1) continue;
-
-                                var merged = PolygonCalculation.Difference(polygonf, polygonp);
-
-                                // 評価値算出
-                                int score = 0;
-                                var pieceList = polygonp.Single().Select(p => new Vector2((float)p.X, (float)p.Y)).ToList();
-                                var frameList = frame.Vertexes.ToList();
-                                for (int i = 0; i < pieceList.Count; i++)
+                                foreach (var nextp in GetNextPieces(piece, nodep, nodef))
                                 {
-                                    for (int j = 0; j < frameList.Count; j++)
+                                    var polygonp = nextp.GetPolygon();
+                                    var intersect = PolygonCalculation.Intersect(polygonf, polygonp);
+                                    if (Math.Abs(polygonp.GetArea()) - Math.Abs(intersect.GetArea()) > 1e-1) continue;
+
+                                    var merged = PolygonCalculation.Difference(polygonf, polygonp);
+
+                                    // 評価値算出
+                                    int score = 0;
+                                    var pieceList = polygonp.Single().Select(p => new Vector2((float)p.X, (float)p.Y)).ToList();
+                                    var frameList = frame.Vertexes.ToList();
+                                    for (int i = 0; i < pieceList.Count; i++)
                                     {
-                                        int k = 0;
-                                        Vector2 pv, nv;
-                                        do
+                                        for (int j = 0; j < frameList.Count; j++)
                                         {
-                                            pv = pieceList[(i + k) % pieceList.Count];
-                                            nv = frameList[(j + k) % frameList.Count].Location;
-                                            k++;
-                                        } while (pv == nv && k <= Math.Min(pieceList.Count, frameList.Count));
-                                        if (--k > score) score = k;
+                                            int k = 0;
+                                            Vector2 pv, nv;
+                                            do
+                                            {
+                                                pv = pieceList[(i + k) % pieceList.Count];
+                                                nv = frameList[(j + k) % frameList.Count].Location;
+                                                k++;
+                                            } while (pv == nv && k <= Math.Min(pieceList.Count, frameList.Count));
+                                            if (--k > score) score = k;
+                                        }
                                     }
-                                }
 
-                                var nextFrames = merged.Select(p => new Frame(p.Select(q => new Vector2((float)q.X, (float)q.Y))));
+                                    var nextFrames = merged.Select(p => new Frame(p.Select(q => new Vector2((float)q.X, (float)q.Y))));
 
-                                if (nextFrames.Any(p => p.Vertexes.Any(q => q.Angle < minAngle))) continue;
-                                if (nextFrames.Any(p => p.Vertexes.GetNodes().Any(q => (q.GetNextValue().Location - q.Value.Location).LengthSquared() < minLengthSquared))) continue;
-                                if (nextFrames.Any(p => p.GetPolygon().GetArea() < minArea)) continue;
+                                    if (nextFrames.Any(p => p.Vertexes.Any(q => q.Angle < minAngle))) continue;
+                                    if (nextFrames.Any(p => p.Vertexes.GetNodes().Any(q => (q.GetNextValue().Location - q.Value.Location).LengthSquared() < minLengthSquared))) continue;
+                                    if (nextFrames.Any(p => p.GetPolygon().GetArea() < minArea)) continue;
 
-                                var newFrames = new List<Frame>(state.CurrentFrame);
-                                newFrames.RemoveAt(fi);
-                                newFrames.AddRange(nextFrames);
-                                var nextState = new State(state.UnusedFlags & ((1UL << pi) ^ ulong.MaxValue))
-                                {
-                                    Parent = state,
-                                    Piece = nextp,
-                                    Score = state.Score + score,
-                                    CurrentFrame = newFrames
-                                };
+                                    var newFrames = new List<Frame>(state.CurrentFrame);
+                                    newFrames.RemoveAt(fi);
+                                    newFrames.AddRange(nextFrames);
+                                    var nextState = new State(state.UnusedFlags & ((1UL << pi) ^ ulong.MaxValue))
+                                    {
+                                        Parent = state,
+                                        Piece = nextp,
+                                        Score = state.Score + score,
+                                        CurrentFrame = newFrames
+                                    };
 
-                                yield return nextState;
+                                    yield return nextState;
 
-                                if (merged.Count == 0)
-                                {
-                                    goto nextFrame;
+                                    if (merged.Count == 0)
+                                    {
+                                        goto nextFrame;
+                                    }
                                 }
                             }
                         }

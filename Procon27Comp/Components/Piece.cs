@@ -42,6 +42,15 @@ namespace Procon27Comp.Components
         {
             return new Piece(Vertexes.Select(p => p.Location.Rotate(rad)));
         }
+
+        /// <summary>
+        /// 反転したピースを生成します。
+        /// </summary>
+        /// <returns></returns>
+        public virtual Piece Flip()
+        {
+            return new Piece(Vertexes.Select(p => new Vector2(-p.X, p.Y)));
+        }
     }
 
     /// <summary>
@@ -64,6 +73,11 @@ namespace Procon27Comp.Components
         public override Piece Rotate(float rad)
         {
             return new MergedPiece(base.Rotate(rad).Vertexes.Select(p => p.Location), ComponentPieces.Select(p => p.Rotate(rad)));
+        }
+
+        public override Piece Flip()
+        {
+            return new MergedPiece(base.Flip().Vertexes.Select(p => p.Location), ComponentPieces.Select(p => p.Flip()));
         }
 
         public override void DrawToImage(Graphics g, Pen pen)
