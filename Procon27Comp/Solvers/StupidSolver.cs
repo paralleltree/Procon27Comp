@@ -21,7 +21,11 @@ namespace Procon27Comp.Solvers
         private Size picSize = new Size(1280, 720);
         public Puzzle Puzzle { get; }
         private List<Piece> FlippedPieces { get; }
-        public List<Solution> Solutions { get; }
+
+        private Solution _solution = null;
+        public Solution Solution { get { return _solution; } }
+
+        public int InitialBeamWidth { get; set; } = 1;
 
         private System.Threading.CancellationToken CancellationToken { get; }
 
@@ -33,7 +37,6 @@ namespace Procon27Comp.Solvers
         {
             Puzzle = puzzle;
             FlippedPieces = puzzle.Pieces.Select(p => p.Flip()).ToList();
-            Solutions = new List<Solution>();
         }
 
         public StupidSolver(Puzzle puzzle, System.Threading.CancellationToken cancellationToken) : this(puzzle)
@@ -43,7 +46,7 @@ namespace Procon27Comp.Solvers
 
         public void Solve()
         {
-            if (Solutions.Count > 0) return;
+            if (Solution != null) return;
             var ansdic = new Dictionary<Frame, State>(Puzzle.Frames.Count);
 
             minLengthSquared = Puzzle.Pieces.SelectMany(p => p.Vertexes.GetNodes().Select(q => (q.GetNextValue().Location - q.Value.Location).LengthSquared())).Min();
@@ -66,7 +69,7 @@ namespace Procon27Comp.Solvers
                 };
                 queues[0].Enqueue(first, 0);
 
-                int width = 5;
+                int width = InitialBeamWidth;
                 while (true)
                 {
                     for (int t = 0; t <= Puzzle.Pieces.Count; t++)
@@ -113,7 +116,7 @@ namespace Procon27Comp.Solvers
             }
 
             // 埋まった
-            Solutions.Add(new Solution(Puzzle, ansdic));
+            _solution = new Solution(Puzzle, ansdic);
         }
 
         private IEnumerable<State> ExpandNodes(State state)
