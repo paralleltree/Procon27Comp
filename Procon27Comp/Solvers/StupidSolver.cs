@@ -110,7 +110,7 @@ namespace Procon27Comp.Solvers
                                 queues[t + 1].Enqueue(nextState, nextState.Score);
                         }
                     }
-                    width++;
+                    width += 4;
                 }
                 nextLoop:;
             }
