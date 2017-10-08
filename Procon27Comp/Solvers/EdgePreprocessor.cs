@@ -4,8 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Numerics = System.Numerics;
-using Vertesaur;
+using System.Numerics;
 
 using Procon27Comp.Components;
 using Procon27Comp.Internal;
@@ -19,44 +18,42 @@ namespace Procon27Comp.Solvers
         /// 繰り返し適用することでより多くのピースを削減できる場合があります。
         /// </summary>
         /// <param name="puzzle">前処理を行う<see cref="Puzzle"/></param>
-        /// <param name="edgeCount">最低一致辺数</param>
         /// <returns>処理を行ったピースを格納した<see cref="Puzzle"/></returns>
-        public static Puzzle ReduceByEdge(this Puzzle puzzle, int edgeCount)
+        public static Puzzle ReduceByEdge(this Puzzle puzzle)
         {
-            var plist = new List<Piece>(puzzle.Pieces);
-            bool[] used = new bool[plist.Count];
-            for (int i = 0; i < plist.Count; i++)
-            {
-                if (used[i]) continue;
-                var mergedPieces = new List<MergedPiece>();
-                bool[] localUsed = new bool[plist.Count];
-                for (int j = 0; j < plist.Count; j++)
+            var primeEdges = puzzle.Pieces
+                .SelectMany((p, i) => p.Vertexes.Zip(p.Vertexes.Skip(1).Concat(p.Vertexes.Take(1)), (q, r) => (r.Location - q.Location) / 10).Where(q => q.X != 0 && q.Y != 0).Select(q =>
                 {
-                    if (used[j] || i == j) continue;
-                    var merged = Enumerable.Range(0, 4).SelectMany(p => Merge(plist[i], plist[j].Rotate(p * 90 * (float)Math.PI / 180), edgeCount)).ToList();
-                    if (merged.Count > 0 && (merged.Count == 1 || merged.Skip(1).All(p => p.GetPolygon().SpatiallyEqual(merged[0].GetPolygon()))))
-                    {
-                        mergedPieces.Add(merged.First());
-                        localUsed[j] = true;
-                    }
-                }
+                    int x = (int)Math.Abs(q.X);
+                    int y = (int)Math.Abs(q.Y);
+                    int gcd = GetGcd(x, y);
+                    return new { PieceIndex = i, PrimeEdgeLengthSquared = (x / gcd) * (x / gcd) + (y / gcd) * (y / gcd) };// Tuple.Create((int)q.X / gcd, (int)q.Y / gcd) };
+                }))
+                .GroupBy(p => p.PrimeEdgeLengthSquared)
+                .ToDictionary(p => p.Key, p => p.ToList());
 
-                if (mergedPieces.Count == 0) continue;
-                var mergedpoly = mergedPieces.Select(p => p.GetPolygon());
-                var union = mergedpoly.Aggregate((p, q) => (Polygon2)PolygonCalculation.Union(p, q));
-                if (union.GetArea() == mergedpoly.Sum(p => p.GetArea()))
-                {
-                    plist[i] = new MergedPiece(union.First().Select(p => new Numerics.Vector2((float)p.X, (float)p.Y)), mergedPieces.SelectMany(p => p.ComponentPieces).Distinct());
-                    for (int j = 0; j < plist.Count; j++)
-                    {
-                        if (localUsed[j]) used[j] = true;
-                    }
-                }
+            var targets = primeEdges.Where(p => p.Value.Count == 2);
+
+            var list = new List<Piece>(puzzle.Pieces);
+            int[] parent = new int[list.Count];
+            for (int i = 0; i < list.Count; i++) parent[i] = -1;
+            foreach (var item in targets)
+            {
+                int pi1 = item.Value[0].PieceIndex;
+                if (parent[pi1] != -1) pi1 = parent[pi1];
+                int pi2 = item.Value[1].PieceIndex;
+                if (parent[pi2] != -1) pi2 = parent[pi2];
+
+                var merged = new Piece[] { list[pi2], list[pi2].Flip() }
+                    .SelectMany(p => Enumerable.Range(0, 4).SelectMany(q => Merge(list[pi1], p.Rotate(q * 90 * (float)Math.PI / 180), item.Key))).ToList();
+                if (merged.Count != 1) continue;
+                list[pi1] = merged.Single();
+                parent[pi2] = pi1;
             }
-            return new Puzzle(puzzle.Frames, plist.Where((p, i) => !used[i]).ToList());
+            return new Puzzle(puzzle.Frames, list.Where((p, i) => parent[i] == -1).ToList());
         }
 
-        public static IEnumerable<MergedPiece> Merge(Piece a, Piece b, int edgeCount)
+        private static IEnumerable<MergedPiece> Merge(Piece a, Piece b, int primeLengthSquared)
         {
             var reversedA = a.Vertexes.Reverse().ToList();
             var vlistB = b.Vertexes.ToList();
@@ -65,37 +62,54 @@ namespace Procon27Comp.Solvers
                 for (int j = 0; j < b.Vertexes.Count; j++)
                 {
                     int k = 0;
-                    Numerics.Vector2 vecA;
-                    Numerics.Vector2 vecB;
-                    do
-                    {
-                        vecA = reversedA[(i + k + 1) % reversedA.Count].Location - reversedA[(i + k) % reversedA.Count].Location;
-                        vecB = vlistB[(j + k + 1) % vlistB.Count].Location - vlistB[(j + k) % vlistB.Count].Location;
-                        k++;
-                    } while (vecA == vecB);
-                    if (--k < edgeCount) continue; // 指定の数の辺以上連続で一致していなければなし
+                    Vector2 vecA = reversedA[(i + k + 1) % reversedA.Count].Location - reversedA[(i + k) % reversedA.Count].Location;
+                    Vector2 vecB = vlistB[(j + k + 1) % vlistB.Count].Location - vlistB[(j + k) % vlistB.Count].Location;
+                    if (vecA != vecB || vecA.GetReducedLengthSquared() != primeLengthSquared) continue;
 
-                    Func<Numerics.Vector2, Numerics.Vector2, MergedPiece> transform = (avec, bvec) =>
+                    Func<Vector2, Vector2, MergedPiece> transform = (avec, bvec) =>
                     {
                         var nodeA = reversedA[i].Location;
                         var nodeB = vlistB[j].Location;
                         float angle = (float)VectorHelper.CalcAngle(avec, bvec);
                         if (Math.Abs(angle % (Math.PI / 2)) > 1E-4) return null; // 90度以外はそもそも回転後に頂点が格子状にないので飛ばす
-                        bool isBLeft = Numerics.Vector3.Cross(new Numerics.Vector3(avec, 0), new Numerics.Vector3(bvec, 0)).Z > 0;
+                        bool isBLeft = Vector3.Cross(new Vector3(avec, 0), new Vector3(bvec, 0)).Z > 0;
                         var transformed = b.Offset(-nodeB.X, -nodeB.Y).Rotate(isBLeft ? -angle : angle).Offset(nodeA.X, nodeA.Y);
-                        if (((Polygon2)PolygonCalculation.Intersect(transformed.GetPolygon(), a.GetPolygon())).GetArea() > 0)
+                        if ((PolygonCalculation.Intersect(transformed.GetPolygon(), a.GetPolygon())).GetArea() > 0)
                             return null;
-                        var union = (Polygon2)PolygonCalculation.Union(a.GetPolygon(), transformed.GetPolygon());
+                        var union = PolygonCalculation.Union(a.GetPolygon(), transformed.GetPolygon());
                         if (union.Count > 1) return null;
-                        return new MergedPiece(union.Single().Select(p => new Numerics.Vector2((float)p.X, (float)p.Y)),
+                        return new MergedPiece(union.Single().Select(p => new Vector2((float)p.X, (float)p.Y)),
                             new Piece[] { a, transformed });
                     };
-                    vecA = reversedA[(i + 1) % reversedA.Count].Location - reversedA[i % reversedA.Count].Location;
-                    vecB = vlistB[(j + 1) % vlistB.Count].Location - vlistB[j % vlistB.Count].Location;
                     var res = transform(vecA, vecB);
                     if (res != null) yield return res;
                 }
             }
+        }
+
+        private static int GetGcd(int a, int b)
+        {
+            if (a < b)
+            {
+                int t = a;
+                a = b;
+                b = t;
+            }
+            while (b > 0)
+            {
+                int r = a % b;
+                a = b;
+                b = r;
+            }
+            return a;
+        }
+
+        private static int GetReducedLengthSquared(this Vector2 vec)
+        {
+            int x = (int)Math.Abs(vec.X);
+            int y = (int)Math.Abs(vec.Y);
+            int gcd = GetGcd(x, y);
+            return (x / gcd) * (x / gcd) + (y / gcd) * (y / gcd);
         }
     }
 }
