@@ -21,42 +21,16 @@ namespace Procon27Comp
             DateTime started = DateTime.Now;
 
 #if DEBUG
-            Console.WriteLine("Preprocessing...");
-
-            Puzzle reduced = puzzle;
-            for (int j = 0; j < 3; j++)
-            {
-                for (int i = 0; i < 4; i++) reduced = reduced.ReduceByEdge(3);
-                for (int i = 0; i < 4; i++) reduced = reduced.ReduceByEdge(2);
-            }
-
-            Console.WriteLine("Pieces count: {0} -> {1}", puzzle.Pieces.Count, reduced.Pieces.Count);
-            reduced.DumpToImage(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "reduced.png"));
-
             Console.WriteLine("Solving...");
 
-            var solver = new StupidSolver(reduced);
+            var solver = new StupidSolver(puzzle);
             solver.Solve();
 
             Solution result = solver.Solutions.Count == 0 ? null : solver.Solutions.Single();
 
 #else
 
-            Func<Puzzle, int, Puzzle> reduce = (p, min) =>
-            {
-                for (int k = 0; k < 2; k++)
-                {
-                    for (int j = 3; j >= min; j--)
-                    {
-                        for (int i = 0; i < 3; i++) p = p.ReduceByEdge(j);
-                    }
-                }
-                return p;
-            };
-
-            var list = new List<Puzzle>();
-            list.Add(reduce(puzzle, 3));
-            list.Add(reduce(puzzle, 2));
+            var list = new List<Puzzle>() { puzzle };
 
             var tokenSource = new System.Threading.CancellationTokenSource();
             var tasks = list.Select(p => Task.Run(() =>
