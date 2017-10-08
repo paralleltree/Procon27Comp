@@ -46,8 +46,11 @@ namespace Procon27Comp
             Solution result = completedIndex == -1 ? null : tasks[completedIndex].Result;
             tokenSource.Cancel();
 
-            Console.WriteLine("Solver params:");
-            Console.WriteLine("  InitialBeamWidth: {0}", list[completedIndex].InitialBeamWidth);
+            if (completedIndex != -1)
+            {
+                Console.WriteLine("Solver params:");
+                Console.WriteLine("  InitialBeamWidth: {0}", list[completedIndex].InitialBeamWidth);
+            }
 #endif
 
             if (result == null)
