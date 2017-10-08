@@ -21,9 +21,12 @@ namespace Procon27Comp
             DateTime started = DateTime.Now;
 
 #if DEBUG
+            var reduced = puzzle.ReduceByEdge();
+            reduced.DumpToImage(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "reduced.png"));
+
             Console.WriteLine("Solving...");
 
-            var solver = new StupidSolver(puzzle);
+            var solver = new StupidSolver(reduced);
             solver.Solve();
 
             Solution result = solver.Solution;
@@ -33,7 +36,7 @@ namespace Procon27Comp
             var tokenSource = new System.Threading.CancellationTokenSource();
 
             var list = new List<StupidSolver>();
-            list.Add(new StupidSolver(puzzle, tokenSource.Token) { InitialBeamWidth = 4 });
+            list.Add(new StupidSolver(puzzle.ReduceByEdge(), tokenSource.Token) { InitialBeamWidth = 4 });
 
             var tasks = list.Select(p => Task.Run(() =>
             {
