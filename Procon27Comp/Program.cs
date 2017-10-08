@@ -26,24 +26,28 @@ namespace Procon27Comp
             var solver = new StupidSolver(puzzle);
             solver.Solve();
 
-            Solution result = solver.Solutions.Count == 0 ? null : solver.Solutions.Single();
+            Solution result = solver.Solution;
 
 #else
 
-            var list = new List<Puzzle>() { puzzle };
-
             var tokenSource = new System.Threading.CancellationTokenSource();
+
+            var list = new List<StupidSolver>();
+            list.Add(new StupidSolver(puzzle, tokenSource.Token) { InitialBeamWidth = 4 });
+
             var tasks = list.Select(p => Task.Run(() =>
             {
-                var solver = new StupidSolver(p, tokenSource.Token);
-                solver.Solve();
-                return solver.Solutions.FirstOrDefault();
+                p.Solve();
+                return p.Solution;
             })).ToArray();
 
             // 探索を打ち切ってnullを返す場合は使えないので実装変えてね☆
             int completedIndex = Task.WaitAny(tasks, 1000 * 60 * 7);
             Solution result = completedIndex == -1 ? null : tasks[completedIndex].Result;
             tokenSource.Cancel();
+
+            Console.WriteLine("Solver params:");
+            Console.WriteLine("  InitialBeamWidth: {0}", list[completedIndex].InitialBeamWidth);
 #endif
 
             if (result == null)
