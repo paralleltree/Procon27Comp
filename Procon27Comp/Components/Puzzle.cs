@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 
 using System.Numerics;
+using Procon27Comp.Internal;
+using Procon27Comp.Solvers;
 
 namespace Procon27Comp.Components
 {
@@ -30,6 +32,50 @@ namespace Procon27Comp.Components
         {
             Frames = frames;
             Pieces = pieces;
+        }
+
+        public Puzzle ApplyHint(Puzzle hint)
+        {
+            var frames = Frames.Select(p => p.GetPolygon()).ToList();
+            var pieces = Pieces.Select(p => p.GetPolygon()).ToList();
+            var hintPieces = hint.Pieces.Select(p => p.GetPolygon()).ToList();
+            bool[] used = new bool[Pieces.Count];
+            for (int i = 0; i < hintPieces.Count; i++)
+            {
+                for (int j = 0; j < frames.Count; j++)
+                {
+                    var diff = PolygonCalculation.Difference(frames[j], hintPieces[i]);
+                    if (diff.GetArea() == frames[j].GetArea()) continue;
+                    if (diff.Any(p => p.Hole.HasValue && p.Hole.Value)) continue;
+
+                    frames[j] = diff;
+                    // ピース同定
+                    int index = FindPiece(hint.Pieces[i], Pieces);
+                    if (index == -1) throw new InvalidOperationException();
+                    used[index] = true;
+                }
+            }
+            return new Puzzle(
+                frames.SelectMany(p => p.Select(q => new Frame(q.Select(r => new Vector2((float)r.X, (float)r.Y))))).ToList(),
+                Pieces.Where((p, i) => !used[i]).ToList());
+        }
+
+        private int FindPiece(Piece piece, List<Piece> pieces)
+        {
+            var offset = -piece.Vertexes.First().Location;
+            piece = piece.Offset(offset.X, offset.Y);
+            foreach (var flipPiece in new Piece[] { piece, piece.Flip() })
+                foreach (var rotatedPiece in Enumerable.Range(0, 4).Select(p => flipPiece.Rotate(p * 90 * (float)Math.PI / 180)))
+                    for (int i = 0; i < pieces.Count; i++)
+                    {
+                        for (int j = 0; j < pieces[i].Vertexes.Count; j++)
+                        {
+                            var d = pieces[i].Vertexes.ElementAt(j).Location;
+                            var transformed = pieces[i].Offset(-d.X, -d.Y);
+                            if (transformed.GetPolygon().SpatiallyEqual(rotatedPiece.GetPolygon())) return i;
+                        }
+                    }
+            return -1;
         }
 
         /// <summary>
