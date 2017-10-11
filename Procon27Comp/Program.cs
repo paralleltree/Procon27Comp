@@ -36,7 +36,9 @@ namespace Procon27Comp
             var tokenSource = new System.Threading.CancellationTokenSource();
 
             var list = new List<StupidSolver>();
-            list.Add(new StupidSolver(puzzle.ReduceByEdge(), tokenSource.Token) { InitialBeamWidth = 4 });
+            list.Add(new StupidSolver(puzzle, tokenSource.Token) { InitialBeamWidth = 2 });
+            list.Add(new StupidSolver(puzzle, tokenSource.Token) { InitialBeamWidth = 4 });
+            list.Add(new StupidSolver(puzzle, tokenSource.Token) { InitialBeamWidth = 8 });
 
             var tasks = list.Select(p => Task.Run(() =>
             {
